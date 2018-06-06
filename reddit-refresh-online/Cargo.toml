@@ -1,0 +1,8 @@
+[package]
+name = "reddit-refresh-online"
+version = "0.1.0"
+authors = ["Nicholas <dojoman19@gmail.com>"]
+
+[dependencies]
+rocket = "0.3.12"
+rocket_codegen = "0.3.12"
