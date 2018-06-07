@@ -6,3 +6,5 @@ authors = ["Nicholas <dojoman19@gmail.com>"]
 [dependencies]
 rocket = "0.3.12"
 rocket_codegen = "0.3.12"
+reqwest = "0.8.6"
+serde_json = "1.0.19"
