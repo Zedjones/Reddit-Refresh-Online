@@ -3,9 +3,13 @@
 #![feature(custom_derive)]
 
 extern crate rocket;
+extern crate rocket_contrib;
 extern crate reqwest;
 extern crate serde_json;
 
+use std::path::{Path, PathBuf};
+use rocket_contrib::Template;
+use rocket::response::NamedFile;
 use reqwest::Client;
 use reqwest::header::{Headers, ContentType};
 use std::collections::HashMap;
@@ -20,6 +24,18 @@ const TOKEN: &str = "o.dlldl3QXAZ1zgfFsAZQyTS673KnNbf2w";
 struct PushCode {
 	code: String, 
 	state: String
+}
+
+#[get("/")]
+fn index() -> Template {
+	let mut context = HashMap::new();
+	context.insert("test", "test");
+	Template::render("index", context)
+}
+
+#[get("/<file..>")]
+fn files(file: PathBuf) -> Option<NamedFile> {
+    NamedFile::open(Path::new("templates/").join(file)).ok()
 }
 
 #[get("/handle_token?<code>")]
@@ -55,7 +71,8 @@ fn get_token(code: &PushCode) -> String {
 }
 
 fn main() {
-	rocket::ignite().mount("/", routes![handle_token]).launch();
+	rocket::ignite().mount("/", routes![handle_token, index, files])
+		.attach(Template::fairing()).launch();
 }
 
 #[cfg(test)]
