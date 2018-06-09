@@ -1,17 +1,19 @@
-#![feature(plugin)]
+#![feature(plugin, custom_derive, decl_macro)]
 #![plugin(rocket_codegen)]
-#![feature(custom_derive)]
 
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate reqwest;
 extern crate serde_json;
 extern crate reddit_refresh_online;
+extern crate cookie;
 
 use std::path::{Path, PathBuf};
 use rocket_contrib::Template;
-use rocket::response::NamedFile;
+use rocket::response::{NamedFile, Redirect};
+use rocket::http::{Cookie, Cookies};
 use reqwest::Client;
+use cookie::SameSite::Lax;
 use reqwest::header::{Headers, ContentType};
 use std::collections::HashMap;
 use serde_json::{Value, from_str};
@@ -30,9 +32,19 @@ struct PushCode {
 }
 
 #[get("/")]
-fn index() -> Template {
+fn index(mut cookies: Cookies) -> Template {
 	let mut context = HashMap::new();
-	context.insert("login", "Test");
+	for cookie in cookies.iter() {
+		println!("{}", cookie);
+	}
+	match cookies.get_private("push_token"){
+		Some(cookie_token) => {
+			let token = cookie_token.to_owned();
+			let name = get_user_name(token.value());
+			context.insert("login", name)
+		}, 
+		None => context.insert("login", "Login".to_string()), 
+	};
 	Template::render("index", context)
 }
 
@@ -42,11 +54,12 @@ fn files(file: PathBuf) -> Option<NamedFile> {
 }
 
 #[get("/handle_token?<code>")]
-fn handle_token(mut code: PushCode) -> String {
-	code.code = code.code.replace("&state=", "");
+fn handle_token(mut cookies: Cookies, code: PushCode) -> Redirect {
 	let token = get_token(&code);
-	let name = get_user_name(&token);
-	name
+	let mut cookie = Cookie::new("push_token", token);
+	cookie.set_same_site(Lax);
+	cookies.add_private(cookie);
+	Redirect::to("/")
 }
 
 fn get_token(code: &PushCode) -> String {

@@ -660,6 +660,7 @@ dependencies = [
 name = "reddit-refresh-online"
 version = "0.1.0"
 dependencies = [
+ "cookie 0.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest 0.8.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket_codegen 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
