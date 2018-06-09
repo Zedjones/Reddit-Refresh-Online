@@ -29,7 +29,7 @@ struct PushCode {
 #[get("/")]
 fn index() -> Template {
 	let mut context = HashMap::new();
-	context.insert("test", "test");
+	context.insert("login", "Test");
 	Template::render("index", context)
 }
 
