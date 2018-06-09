@@ -70,6 +70,7 @@ pub mod pushbullet{
 
     const DEVICES_URL: &str = "https://api.pushbullet.com/v2/devices";
     const PUSHES_URL: &str = "https://api.pushbullet.com/v2/pushes";
+    const USER_URL: &str = "https://api.pushbullet.com/v2/users/me";
 
     pub fn get_devices(token: String) -> HashMap<String, String>{
         let mut devices_map = HashMap::new();
@@ -104,5 +105,14 @@ pub mod pushbullet{
             headers.set_raw("Access-Token", token);
             client.post(PUSHES_URL).headers(headers).json(&data).send().unwrap();
         }
+    }
+
+    pub fn get_user_name(token: &str) -> String {
+        let client = Client::new();
+        let mut content = client.get(USER_URL)
+            .basic_auth::<&str, String>(token, None).send().unwrap();
+        let content = content.text().unwrap();
+        let json: Value = from_str(&content).unwrap();
+        json["name"].as_str().unwrap().to_string()
     }
 }

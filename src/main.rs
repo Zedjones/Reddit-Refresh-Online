@@ -6,6 +6,7 @@ extern crate rocket;
 extern crate rocket_contrib;
 extern crate reqwest;
 extern crate serde_json;
+extern crate reddit_refresh_online;
 
 use std::path::{Path, PathBuf};
 use rocket_contrib::Template;
@@ -14,12 +15,14 @@ use reqwest::Client;
 use reqwest::header::{Headers, ContentType};
 use std::collections::HashMap;
 use serde_json::{Value, from_str};
+use reddit_refresh_online::pushbullet::get_user_name;
 
 const OAUTH_URL: &str = "https://api.pushbullet.com/oauth2/token";
 const CLIENT_ID: &str = "PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1";
 const CLIENT_SECRET: &str = "VdoOJb5BVCPNjqD0b02dVrIVZzkVD2oY";
 const TOKEN: &str = "o.dlldl3QXAZ1zgfFsAZQyTS673KnNbf2w";
 
+#[allow(dead_code)]
 #[derive(FromForm)]
 struct PushCode {
 	code: String, 
@@ -42,8 +45,8 @@ fn files(file: PathBuf) -> Option<NamedFile> {
 fn handle_token(mut code: PushCode) -> String {
 	code.code = code.code.replace("&state=", "");
 	let token = get_token(&code);
-	println!("{}", token);
-	token
+	let name = get_user_name(&token);
+	name
 }
 
 fn get_token(code: &PushCode) -> String {
@@ -55,8 +58,6 @@ fn get_token(code: &PushCode) -> String {
 	data.insert("code", &code.code);
 	data.insert("grant_type", "authorization_code");
 	data.insert("client_id", CLIENT_ID);
-
-	println!("{:#?}", data);
 
 	let mut headers = Headers::new();
 	headers.set(ContentType::json());
