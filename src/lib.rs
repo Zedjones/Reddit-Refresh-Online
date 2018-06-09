@@ -4,7 +4,7 @@ extern crate serde_json;
 pub mod subparser{
 
     //import necessary constructs for our module
-    use reqwest::get;
+    use reqwest::{get, Client};
     use serde_json::{Value, from_str};
 
     pub type SubResult = (String, String);
@@ -57,6 +57,38 @@ pub mod subparser{
 
         println!("{:#?}", (&link, &title));
         Ok((link, title.to_string()))
+    }
+
+    pub fn validate_subreddit(mut sub: String) -> Result<bool, String> {
+
+        //in case subreddit is missing r/
+        if !sub.contains("r/"){
+            sub = format!("r/{}", sub);
+        }
+
+        sub = sub.trim().to_string();
+
+        let url = format!("https://www.reddit.com/{}/\
+        about.json", sub);
+
+        let client = Client::new();
+
+        let content = match client.get(&url).send().unwrap().text(){
+            Ok(content) => {
+                content
+            }, 
+            Err(e) => {
+                let error = format!("Error retrieving webpage: {}", e.to_string());
+                return Err(error);
+            }
+        };
+
+        let json: Value = from_str(&content).unwrap();
+
+        match json["data"]["url"].as_str() {
+            Some(_) => Ok(true), 
+            None => Ok(false)
+        }
     }
 }
 

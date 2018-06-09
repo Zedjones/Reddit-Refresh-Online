@@ -18,6 +18,7 @@ use reqwest::header::{Headers, ContentType};
 use std::collections::HashMap;
 use serde_json::{Value, from_str};
 use reddit_refresh_online::pushbullet::get_user_name;
+use reddit_refresh_online::subparser::validate_subreddit;
 
 const OAUTH_URL: &str = "https://api.pushbullet.com/oauth2/token";
 const CLIENT_ID: &str = "PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1";
@@ -62,6 +63,12 @@ fn handle_token(mut cookies: Cookies, code: PushCode) -> Redirect {
 	Redirect::to("/")
 }
 
+#[post("/validate_subreddit", data = "<sub>")]
+fn validate_route(sub: String) -> String {
+	let is_valid = validate_subreddit(sub);
+	is_valid.unwrap().to_string()
+}
+
 fn get_token(code: &PushCode) -> String {
 	let client = Client::new();
 	let mut content = client.post(OAUTH_URL);
@@ -85,7 +92,7 @@ fn get_token(code: &PushCode) -> String {
 }
 
 fn main() {
-	rocket::ignite().mount("/", routes![handle_token, index, files])
+	rocket::ignite().mount("/", routes![handle_token, index, files, validate_route])
 		.attach(Template::fairing()).launch();
 }
 
