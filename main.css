@@ -58,7 +58,7 @@ html {
   margin: 0 9%;
   background: rgb(255, 255, 255);
   height: 100%;
-  padding: 0 1%;
+  padding: 1% 1%;
 }
 
 .flex-container {
@@ -88,6 +88,21 @@ html {
 
 .instruction {
   font-size: .5em;
+}
+
+.deviceList {
+  padding: 0;
+  height:17.5%;
+  width:90%;	
+  overflow-y:auto;
+  float:left;
+  position:relative;
+  margin: 1% 5%;
+}
+
+.card {
+  float: left;
+  margin: 0 2%;
 }
 
 
