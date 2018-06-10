@@ -28,6 +28,8 @@ const CLIENT_ID: &str = "PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1";
 const CLIENT_SECRET: &str = "VdoOJb5BVCPNjqD0b02dVrIVZzkVD2oY";
 const TOKEN: &str = "o.dlldl3QXAZ1zgfFsAZQyTS673KnNbf2w";
 
+type SearchMap = HashMap<String, Vec<String>>;
+
 #[allow(dead_code)]
 #[derive(FromForm)]
 struct PushCode {
@@ -39,6 +41,12 @@ struct PushCode {
 struct JsonValue{
 	key: String,
 	value: String
+}
+
+#[derive(Serialize, Deserialize)]
+struct UserInfo{
+	devices: Vec<String>, 
+	searches: SearchMap
 }
 
 #[get("/")]
