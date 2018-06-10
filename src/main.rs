@@ -7,9 +7,12 @@ extern crate reqwest;
 extern crate serde_json;
 extern crate reddit_refresh_online;
 extern crate cookie;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 use std::path::{Path, PathBuf};
-use rocket_contrib::Template;
+use rocket_contrib::{Template, Json};
 use rocket::response::{NamedFile, Redirect};
 use rocket::http::{Cookie, Cookies};
 use reqwest::Client;
@@ -30,6 +33,12 @@ const TOKEN: &str = "o.dlldl3QXAZ1zgfFsAZQyTS673KnNbf2w";
 struct PushCode {
 	code: String, 
 	state: String
+}
+
+#[derive(Serialize)]
+struct JsonValue{
+	key: String,
+	value: String
 }
 
 #[get("/")]
@@ -64,9 +73,11 @@ fn handle_token(mut cookies: Cookies, code: PushCode) -> Redirect {
 }
 
 #[post("/validate_subreddit", data = "<sub>")]
-fn validate_route(sub: String) -> String {
+fn validate_route(sub: String) -> Json<JsonValue> {
 	let is_valid = validate_subreddit(sub);
-	is_valid.unwrap().to_string()
+	let is_valid = is_valid.unwrap().to_string();
+	let result = JsonValue{key: "is_valid".to_string(), value: is_valid};
+	Json(result)
 }
 
 fn get_token(code: &PushCode) -> String {
