@@ -1,35 +1,60 @@
-#![feature(plugin)]
+#![feature(plugin, custom_derive, decl_macro)]
 #![plugin(rocket_codegen)]
-#![feature(custom_derive)]
 
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate reqwest;
 extern crate serde_json;
+extern crate reddit_refresh_online;
+extern crate cookie;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 use std::path::{Path, PathBuf};
-use rocket_contrib::Template;
-use rocket::response::NamedFile;
+use rocket_contrib::{Template, Json};
+use rocket::response::{NamedFile, Redirect};
+use rocket::http::{Cookie, Cookies};
 use reqwest::Client;
+use cookie::SameSite::Lax;
 use reqwest::header::{Headers, ContentType};
 use std::collections::HashMap;
 use serde_json::{Value, from_str};
+use reddit_refresh_online::pushbullet::get_user_name;
+use reddit_refresh_online::subparser::validate_subreddit;
 
 const OAUTH_URL: &str = "https://api.pushbullet.com/oauth2/token";
 const CLIENT_ID: &str = "PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1";
 const CLIENT_SECRET: &str = "VdoOJb5BVCPNjqD0b02dVrIVZzkVD2oY";
 const TOKEN: &str = "o.dlldl3QXAZ1zgfFsAZQyTS673KnNbf2w";
 
+#[allow(dead_code)]
 #[derive(FromForm)]
 struct PushCode {
 	code: String, 
 	state: String
 }
 
+#[derive(Serialize)]
+struct JsonValue{
+	key: String,
+	value: String
+}
+
 #[get("/")]
-fn index() -> Template {
+fn index(mut cookies: Cookies) -> Template {
 	let mut context = HashMap::new();
-	context.insert("login", "Test");
+	for cookie in cookies.iter() {
+		println!("{}", cookie);
+	}
+	match cookies.get_private("push_token"){
+		Some(cookie_token) => {
+			let token = cookie_token.to_owned();
+			let name = get_user_name(token.value());
+			context.insert("login", name)
+		}, 
+		None => context.insert("login", "Login".to_string()), 
+	};
 	Template::render("index", context)
 }
 
@@ -39,11 +64,20 @@ fn files(file: PathBuf) -> Option<NamedFile> {
 }
 
 #[get("/handle_token?<code>")]
-fn handle_token(mut code: PushCode) -> String {
-	code.code = code.code.replace("&state=", "");
+fn handle_token(mut cookies: Cookies, code: PushCode) -> Redirect {
 	let token = get_token(&code);
-	println!("{}", token);
-	token
+	let mut cookie = Cookie::new("push_token", token);
+	cookie.set_same_site(Lax);
+	cookies.add_private(cookie);
+	Redirect::to("/")
+}
+
+#[post("/validate_subreddit", data = "<sub>")]
+fn validate_route(sub: String) -> Json<JsonValue> {
+	let is_valid = validate_subreddit(sub);
+	let is_valid = is_valid.unwrap().to_string();
+	let result = JsonValue{key: "is_valid".to_string(), value: is_valid};
+	Json(result)
 }
 
 fn get_token(code: &PushCode) -> String {
@@ -55,8 +89,6 @@ fn get_token(code: &PushCode) -> String {
 	data.insert("code", &code.code);
 	data.insert("grant_type", "authorization_code");
 	data.insert("client_id", CLIENT_ID);
-
-	println!("{:#?}", data);
 
 	let mut headers = Headers::new();
 	headers.set(ContentType::json());
@@ -71,7 +103,7 @@ fn get_token(code: &PushCode) -> String {
 }
 
 fn main() {
-	rocket::ignite().mount("/", routes![handle_token, index, files])
+	rocket::ignite().mount("/", routes![handle_token, index, files, validate_route])
 		.attach(Template::fairing()).launch();
 }
 
