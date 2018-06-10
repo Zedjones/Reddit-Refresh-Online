@@ -1,0 +1,148 @@
+body {
+  background-color: #faf2f2;
+  font-family: 'Roboto', sans-serif;
+}
+
+nav {
+  padding-left: 5%;
+  padding-right: 5%;
+  margin: 0 9%;
+  box-shadow: 0 2px 4px -1px rgba(0,0,0,0.25);
+}
+
+html, body {
+  height: 100%;
+}
+
+.indented {
+  margin: 0 9%;
+  background: rgb(255, 255, 255);
+  min-height: 100%;
+  padding: 1% 1%;
+}
+
+.flex-container {
+  float: left;
+  padding: 0;
+  margin: 0;
+  width: 90%;
+  list-style: none;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row wrap;
+  justify-content: space-around;
+}
+
+.flex-item {
+  padding: 0 2%;
+  /* background: #5c5b5a; */
+  width: 100%;
+  margin-top: 10px;
+  flex-grow: 1;
+  /* color: white; */
+  /* font-weight: bold; */
+  /* font-size: 3em; */
+  /* text-align: center; */
+}
+
+.instruction {
+  font-size: .5em;
+}
+
+.deviceList {
+  padding: 0;
+  height:17.5%;
+  width:90%;	
+  overflow-y:auto;
+  float:left;
+  position:relative;
+  margin: 1% 4%;
+  box-sizing: border-box;
+}
+
+.card {
+  float: left;
+  margin: 0 2%;
+  width: 29%;
+}
+
+.subRed ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.subRed li {
+  background-color: white;
+  height: 40px;
+  line-height: 40px;
+  color: #666;
+}
+
+input {
+  font-size: 18px;
+  background-color: #f7f7f7;
+  width: 100%;
+  padding: 13px 13px 13px 20px;
+  box-sizing: border-box;
+  color: #2980b9;
+  border: 3px solid rgba(0, 0, 0, 0);
+}
+
+.subRed li span {
+  background-color: #e74c3c;
+  height: 40px;
+  margin-right: 20px;
+  text-align: center;
+  color: white;
+  width: 0;
+  display: inline-block;
+  transition: 0.2s linear;
+  opacity: 0;
+}
+
+input:focus {
+  background-color: white;
+  border: 3px solid #2980b9;
+  outline: none;
+}
+
+li li:hover span {
+  width: 40px;
+  opacity: 1.0;
+}
+
+.search:nth-child(2n){
+  background-color: #f7f7f7;
+}
+
+.fa-edit, .fa-check {
+  float: right;
+  margin: 0 4px;
+}
+
+.subRed {
+  width: 25%;
+  margin: 100px auto;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+  background-color: #f7f7f7;
+  list-style: none;
+  float: left;
+  height: 30%;
+}
+
+.subRed h2 {
+  background-color: #2980b9;
+  color: white;
+  margin: 0;
+  padding: 10px 20px;
+  font-size: 24px;
+  font-weight: normal;
+}
+
+
+
+
