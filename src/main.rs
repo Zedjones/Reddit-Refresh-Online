@@ -15,10 +15,12 @@ use std::path::{Path, PathBuf};
 use rocket_contrib::{Template, Json};
 use rocket::response::{NamedFile, Redirect};
 use rocket::http::{Cookie, Cookies};
+use rocket::Data;
 use reqwest::Client;
 use cookie::SameSite::Lax;
 use reqwest::header::{Headers, ContentType};
 use std::collections::HashMap;
+use std::str;
 use serde_json::{Value, from_str};
 use reddit_refresh_online::pushbullet::get_user_name;
 use reddit_refresh_online::subparser::validate_subreddit;
@@ -27,8 +29,6 @@ const OAUTH_URL: &str = "https://api.pushbullet.com/oauth2/token";
 const CLIENT_ID: &str = "PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1";
 const CLIENT_SECRET: &str = "VdoOJb5BVCPNjqD0b02dVrIVZzkVD2oY";
 const TOKEN: &str = "o.dlldl3QXAZ1zgfFsAZQyTS673KnNbf2w";
-
-type SearchMap = HashMap<String, Vec<String>>;
 
 #[allow(dead_code)]
 #[derive(FromForm)]
@@ -44,9 +44,20 @@ struct JsonValue{
 }
 
 #[derive(Serialize, Deserialize)]
-struct UserInfo{
-	devices: Vec<String>, 
-	searches: SearchMap
+struct SubSearch {
+	sub: String, 
+	searches: Vec<String>
+}
+
+#[post("/process", format="application/json", data="<sub>")]
+fn process(sub: Json<SubSearch>) {
+	println!("{}", sub.0.sub);
+	println!("{:#?}", sub.0.searches);
+}
+
+#[post("/test", data="<var>")]
+fn test_route(var: Data) {
+	println!("{}", str::from_utf8(var.peek()).unwrap());
 }
 
 #[get("/")]
@@ -111,7 +122,7 @@ fn get_token(code: &PushCode) -> String {
 }
 
 fn main() {
-	rocket::ignite().mount("/", routes![handle_token, index, files, validate_route])
+	rocket::ignite().mount("/", routes![handle_token, index, files, validate_route, test_route, process])
 		.attach(Template::fairing()).launch();
 }
 
