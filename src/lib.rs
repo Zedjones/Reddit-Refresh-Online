@@ -6,6 +6,7 @@ extern crate serde_json;
 
 pub mod schema;
 pub mod models;
+mod searches_db;
 
 pub mod subparser{
 

@@ -1,7 +1,7 @@
 table! {
     searches (id) {
         id -> Int4,
-        username -> Varchar,
+        email -> Varchar,
         sub -> Varchar,
         search -> Varchar,
     }

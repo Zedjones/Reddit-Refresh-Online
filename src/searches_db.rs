@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub mod searches_db {
 
     use diesel::prelude::*;
@@ -16,22 +17,22 @@ pub mod searches_db {
             .expect(&format!("Error connecting to {}", database_url))
     }
 
-    pub fn get_searches(username: String) -> Vec<Search> {
+    pub fn get_searches(email: String) -> Vec<Search> {
         use schema::searches;
-        let error = format!("Error loading searches for {}", username);
+        let error = format!("Error loading searches for {}", email);
         let connection = connect();
 
         searches::table
-            .filter(searches::username.eq(username))
+            .filter(searches::email.eq(email))
             .load::<Search>(&connection)
             .expect(&error)
 
     }
 
-    pub fn add_search(username: String, sub: String, search: String) -> Search {
+    pub fn add_search(email: String, sub: String, search: String) -> Search {
         use schema::searches;
         use diesel::insert_into;
-        let new_search = NewSearch { username:&username, sub:&sub, search:&search };
+        let new_search = NewSearch { email:&email, sub:&sub, search:&search };
         let connection = connect();
 
         insert_into(searches::table)
@@ -41,9 +42,10 @@ pub mod searches_db {
 
     }
 
-    pub fn delete_search(username: String, sub: String, search: String) {
+    #[allow(unused_imports)]
+    pub fn delete_search(_email: String, _sub: String, _search: String) {
         use schema::searches;
-        let connection = connect();
+        let _connection = connect();
 
         //TODO add deletion mechanism for only an exact match
     }
