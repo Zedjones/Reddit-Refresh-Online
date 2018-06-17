@@ -1,5 +1,11 @@
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
 extern crate reqwest;
 extern crate serde_json;
+
+pub mod schema;
+pub mod models;
 
 pub mod subparser{
 
