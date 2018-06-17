@@ -1,0 +1,6 @@
+CREATE TABLE searches (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR NOT NULL,
+  sub VARCHAR NOT NULL,
+  search VARCHAR NOT NULL
+)
