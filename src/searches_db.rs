@@ -43,11 +43,23 @@ pub mod searches_db {
     }
 
     #[allow(unused_imports)]
-    pub fn delete_search(_email: String, _sub: String, _search: String) {
-        use schema::searches;
-        let _connection = connect();
+    pub fn delete_search(email_f: String, sub_f: String, search_f: String) 
+    -> Result<(), String> {
+        use schema::searches::dsl::*;
+        use diesel::delete;
 
-        //TODO add deletion mechanism for only an exact match
+        let connection = connect();
+
+        let num_deleted = delete(searches.filter(email.eq(email_f)
+            .and(sub.eq(sub_f)).and(search.eq(search_f))))
+            .execute(&connection)
+            .expect("Error deleting post");
+
+        match num_deleted {
+            1 => Ok(()), 
+            _ => Err("Invalid email, sub, or search to delete".to_string())
+        }
+
     }
 
 }

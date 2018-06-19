@@ -1,0 +1,2 @@
+ALTER TABLE devices
+MODIFY COLUMN is_active DROP NOT NULL
