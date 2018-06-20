@@ -7,6 +7,10 @@ pub mod searches_db {
     use std::env;
     use models::{Search, NewSearch};
 
+    /**
+     * Function to connect to the database specified in .env
+     * @return - a postgres database connection 
+     */
     pub fn connect() -> PgConnection {
         
         dotenv().ok();
@@ -17,6 +21,12 @@ pub mod searches_db {
             .expect(&format!("Error connecting to {}", database_url))
     }
 
+    /**
+     * Get all the items in the searches table of the database which 
+     * contain the requested email 
+     * @param email - the email to filter searches by 
+     * @return - a vector list containing search structs (id, email, sub, search)
+     */
     pub fn get_searches(email: String) -> Vec<Search> {
         use schema::searches;
         let error = format!("Error loading searches for {}", email);
@@ -29,6 +39,13 @@ pub mod searches_db {
 
     }
 
+    /**
+     * Add a search with the provided email, subreddit, and search term 
+     * @param email - the email to use for this item 
+     * @param sub - the subreddit to use for this item
+     * @param search - the search term to use for this item 
+     * @return - the search object that was added
+     */
     pub fn add_search(email: String, sub: String, search: String) -> Search {
         use schema::searches;
         use diesel::insert_into;
@@ -42,6 +59,13 @@ pub mod searches_db {
 
     }
 
+    /**
+     * Deletes a query with the given email, subreddit, and search term 
+     * @param email_f - the email of query to delete
+     * @param sub_f - the subreddit of query to delete
+     * @param search_f - the search of query to delete 
+     * @return - Either ok() or an error about why the deletion failed 
+     */
     #[allow(unused_imports)]
     pub fn delete_search(email_f: String, sub_f: String, search_f: String) 
     -> Result<(), String> {
