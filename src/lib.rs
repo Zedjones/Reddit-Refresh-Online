@@ -66,6 +66,12 @@ pub mod subparser{
         Ok((link, title.to_string()))
     }
 
+    /**
+     * Check whether or not a subreddit is valid 
+     * @param sub - the subreddit to validate
+     * @return - Result containing either a boolean or a string 
+     * describing an error
+    */
     pub fn validate_subreddit(mut sub: String) -> Result<bool, String> {
 
         //in case subreddit is missing r/
@@ -75,6 +81,7 @@ pub mod subparser{
 
         sub = sub.trim().to_string();
 
+        //we use the about page because using post with reqwest wasn't working
         let url = format!("https://www.reddit.com/{}/\
         about.json", sub);
 
@@ -85,6 +92,7 @@ pub mod subparser{
                 content
             }, 
             Err(e) => {
+                //if we can't connect, return an error
                 let error = format!("Error retrieving webpage: {}", e.to_string());
                 return Err(error);
             }
@@ -92,6 +100,8 @@ pub mod subparser{
 
         let json: Value = from_str(&content).unwrap();
 
+        //otherwise, check if there is a valid url for the subreddit in the json 
+        //response 
         match json["data"]["url"].as_str() {
             Some(_) => Ok(true), 
             None => Ok(false)
@@ -107,17 +117,26 @@ pub mod pushbullet{
     use serde_json::{Value, from_str};
     use super::subparser::SubResult;
 
+    //Constant urls for the Pushbullet APIs
     const DEVICES_URL: &str = "https://api.pushbullet.com/v2/devices";
     const PUSHES_URL: &str = "https://api.pushbullet.com/v2/pushes";
     const USER_URL: &str = "https://api.pushbullet.com/v2/users/me";
 
+    /**
+     * Get the devices for a user given their Pushbullet API token
+     * @param token - the Pushbullet API token to get devices for 
+     * @return - a map of device nicknames to ids 
+     */
     pub fn get_devices(token: String) -> HashMap<String, String>{
         let mut devices_map = HashMap::new();
         let client = Client::new();
+        //create and send the API request 
         let mut content = client.get(DEVICES_URL)
             .basic_auth::<String, String>(token, None).send().unwrap();
         let content = content.text().unwrap();
+        //get the json map from the response
         let json: Value = from_str(&content).unwrap();
+        //get the "devices" array in the json 
         let devices = json["devices"].as_array().expect("Could not into array");
         for device in devices{
             let id = device["iden"].as_str().expect("Could not iden");
@@ -130,6 +149,11 @@ pub mod pushbullet{
         devices_map
     }
 
+    /**
+     * Send a Pushbullet link to each device provided with the given token
+     * @param devices - a Vec containing strings of device ids
+     * @param token - the Pushbullet API token to get the devices for 
+     */
     pub fn send_push_link(devices: Vec<String>, token: &str, 
     (url, title): SubResult){
         for device in devices{
