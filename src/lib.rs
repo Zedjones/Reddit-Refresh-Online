@@ -153,6 +153,8 @@ pub mod pushbullet{
      * Send a Pushbullet link to each device provided with the given token
      * @param devices - a Vec containing strings of device ids
      * @param token - the Pushbullet API token to get the devices for 
+     * @param url - the url of the Reddit post to send 
+     * @param title - the title of the Reddit post to send
      */
     pub fn send_push_link(devices: Vec<String>, token: &str, 
     (url, title): SubResult){
@@ -170,6 +172,12 @@ pub mod pushbullet{
         }
     }
 
+    /**
+     * Gets the name attached to the Pushbullet account 
+     * with the provided API token
+     * @param token - the API token to get the name for 
+     * @return - a string with the name of the Pushbullet user
+     */
     pub fn get_user_name(token: &str) -> String {
         let client = Client::new();
         let mut content = client.get(USER_URL)
