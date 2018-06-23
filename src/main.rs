@@ -13,8 +13,8 @@ extern crate serde_derive;
 
 use std::path::{Path, PathBuf};
 use rocket_contrib::{Template, Json};
-use rocket::response::{NamedFile, Redirect};
-use rocket::http::{Cookie, Cookies};
+use rocket::response::{NamedFile, Redirect, Failure};
+use rocket::http::{Cookie, Cookies, Status};
 use reqwest::Client;
 use cookie::SameSite::Lax;
 use reqwest::header::{Headers, ContentType};
@@ -23,8 +23,7 @@ use std::str;
 use serde_json::{Value, from_str};
 use reddit_refresh_online::pushbullet::{get_user_name, get_email};
 use reddit_refresh_online::subparser::validate_subreddit;
-use reddit_refresh_online::searches_db::searches_db::{get_searches};
-use reddit_refresh_online::models::Search;
+use reddit_refresh_online::searches_db::searches_db::{add_search, delete_sub_searches};
 
 //Constant declarations for URLs, tokens, etc.
 const OAUTH_URL: &str = "https://api.pushbullet.com/oauth2/token";
@@ -60,16 +59,24 @@ struct SubSearch {
  * @param sub - a deserialized SubSearch object from the request body
  */
 #[post("/process", format="application/json", data="<sub_search>")]
-fn process(mut cookies: Cookies, sub_search: Json<SubSearch>) {
-	//TODO: do something meaningful with this data 
-	//TODO: business logic w/ adding and removing searches, etc.
+fn process(mut cookies: Cookies, sub_search: Json<SubSearch>) 
+-> Result<(), Failure>{
+	// TODO: test that this logic actually works
+	//grab token from cookies and get the email attached to that token
 	let token = cookies.get_private("push_token").unwrap().to_owned();
 	let email = get_email(&token.value());
-	let curr_searches = get_searches(email);
-	let correct_sub: Vec<Search> = curr_searches.into_iter()
-		.filter(|search| search.sub == sub_search.sub).collect();
+	//delete the previous searches attached to this user and subreddit
+	match delete_sub_searches(&email, &sub_search.sub) {
+		Ok(_) => (),
+		Err(_) => return Err(Failure(Status::NotAcceptable))
+	};
+	//add all of the new searches 
+	for search in &sub_search.searches {
+		add_search(&email, &sub_search.sub, &search);
+	}
 	println!("{}", sub_search.sub);
 	println!("{:#?}", sub_search.searches);
+	Ok(())
 }
 
 /**
@@ -80,15 +87,15 @@ fn process(mut cookies: Cookies, sub_search: Json<SubSearch>) {
 #[get("/")]
 fn index(mut cookies: Cookies) -> Template {
 	let mut context = HashMap::new();
-	//Get the private cookie for push_token
+	//get the private cookie for push_token
 	match cookies.get_private("push_token"){
-		//If one exists, set model["login"] to the cookie
+		//ff one exists, set model["login"] to the cookie
 		Some(cookie_token) => {
 			let token = cookie_token.to_owned();
 			let name = get_user_name(token.value());
 			context.insert("login", name)
 		}, 
-		//Otherwise, simply supply the default "Login"
+		//otherwise, simply supply the default "Login"
 		None => context.insert("login", "Login".to_string()), 
 	};
 	Template::render("index", context)

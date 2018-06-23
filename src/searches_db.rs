@@ -36,7 +36,30 @@ pub mod searches_db {
             .filter(searches::email.eq(email))
             .load::<Search>(&connection)
             .expect(&error)
+    }
 
+    /**
+     * Delete all queries in the searches table which contain the 
+     * provided email and subreddit 
+     * @param email - the email to delete queries for 
+     * @param sub - the subreddit to delete queries for
+     */
+    pub fn delete_sub_searches(email_d: &str, sub_d: &str)
+    -> Result<(), String> {
+        use schema::searches::dsl::*;
+        use diesel::delete;
+
+        let connection = connect();
+
+        let num_deleted = delete(searches.filter(email.eq(email_d)
+            .and(sub.eq(sub_d))))
+            .execute(&connection)
+            .expect("Error deleting post");
+
+        match num_deleted {
+            0 => Err("Invalid email or sub to delete".to_string()),
+            _ => Ok(())
+        }
     }
 
     /**
@@ -46,7 +69,7 @@ pub mod searches_db {
      * @param search - the search term to use for this item 
      * @return - the search object that was added
      */
-    pub fn add_search(email: String, sub: String, search: String) -> Search {
+    pub fn add_search(email: &str, sub: &str, search: &str) -> Search {
         use schema::searches;
         use diesel::insert_into;
         let new_search = NewSearch { email:&email, sub:&sub, search:&search };
