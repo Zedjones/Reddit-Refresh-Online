@@ -24,6 +24,7 @@ use serde_json::{Value, from_str};
 use reddit_refresh_online::pushbullet::{get_user_name, get_email};
 use reddit_refresh_online::subparser::validate_subreddit;
 use reddit_refresh_online::searches_db::searches_db::{get_searches};
+use reddit_refresh_online::models::Search;
 
 //Constant declarations for URLs, tokens, etc.
 const OAUTH_URL: &str = "https://api.pushbullet.com/oauth2/token";
@@ -58,15 +59,17 @@ struct SubSearch {
  * as well as an array of search terms 
  * @param sub - a deserialized SubSearch object from the request body
  */
-#[post("/process", format="application/json", data="<sub>")]
-fn process(mut cookies: Cookies, sub: Json<SubSearch>) {
+#[post("/process", format="application/json", data="<sub_search>")]
+fn process(mut cookies: Cookies, sub_search: Json<SubSearch>) {
 	//TODO: do something meaningful with this data 
-	//TODO: get the email from the cookies and handle business logic 
+	//TODO: business logic w/ adding and removing searches, etc.
 	let token = cookies.get_private("push_token").unwrap().to_owned();
 	let email = get_email(&token.value());
-	let _curr_searches = get_searches(email);
-	println!("{}", sub.0.sub);
-	println!("{:#?}", sub.0.searches);
+	let curr_searches = get_searches(email);
+	let correct_sub: Vec<Search> = curr_searches.into_iter()
+		.filter(|search| search.sub == sub_search.sub).collect();
+	println!("{}", sub_search.sub);
+	println!("{:#?}", sub_search.searches);
 }
 
 /**
