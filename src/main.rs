@@ -15,15 +15,15 @@ use std::path::{Path, PathBuf};
 use rocket_contrib::{Template, Json};
 use rocket::response::{NamedFile, Redirect};
 use rocket::http::{Cookie, Cookies};
-use rocket::Data;
 use reqwest::Client;
 use cookie::SameSite::Lax;
 use reqwest::header::{Headers, ContentType};
 use std::collections::HashMap;
 use std::str;
 use serde_json::{Value, from_str};
-use reddit_refresh_online::pushbullet::get_user_name;
+use reddit_refresh_online::pushbullet::{get_user_name, get_email};
 use reddit_refresh_online::subparser::validate_subreddit;
+use reddit_refresh_online::searches_db::searches_db::{get_searches};
 
 //Constant declarations for URLs, tokens, etc.
 const OAUTH_URL: &str = "https://api.pushbullet.com/oauth2/token";
@@ -59,9 +59,12 @@ struct SubSearch {
  * @param sub - a deserialized SubSearch object from the request body
  */
 #[post("/process", format="application/json", data="<sub>")]
-fn process(sub: Json<SubSearch>) {
+fn process(mut cookies: Cookies, sub: Json<SubSearch>) {
 	//TODO: do something meaningful with this data 
 	//TODO: get the email from the cookies and handle business logic 
+	let token = cookies.get_private("push_token").unwrap().to_owned();
+	let email = get_email(&token.value());
+	let _curr_searches = get_searches(email);
 	println!("{}", sub.0.sub);
 	println!("{:#?}", sub.0.searches);
 }

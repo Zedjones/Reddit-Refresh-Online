@@ -6,7 +6,7 @@ extern crate serde_json;
 
 pub mod schema;
 pub mod models;
-mod searches_db;
+pub mod searches_db;
 
 pub mod subparser{
 
@@ -185,5 +185,20 @@ pub mod pushbullet{
         let content = content.text().unwrap();
         let json: Value = from_str(&content).unwrap();
         json["name"].as_str().unwrap().to_string()
+    }
+
+    /**
+     * Gets the email attached to the Pushbullet account 
+     * with the provided API token 
+     * @param token - the API token to get the email for 
+     * @return - a string with the email of the Pushbullet user
+     */ 
+    pub fn get_email(token: &str) -> String {
+        let client = Client::new();
+        let mut content = client.get(USER_URL)
+            .basic_auth::<&str, String>(token, None).send().unwrap();
+        let content = content.text().unwrap();
+        let json: Value = from_str(&content).unwrap();
+        json["email"].as_str().unwrap().to_string()
     }
 }
