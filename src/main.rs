@@ -179,13 +179,23 @@ fn main() {
 mod tests{
 
 	extern crate rocket;
-	use rocket::local::Client;
+	extern crate rocket_contrib;
+	extern crate reddit_refresh_online;
+	use {validate_route, JsonValue};
+	use rocket_contrib::Json;
 
 	#[test]
-	fn test_handle_token(){
-		let rocket = rocket::ignite().mount("/", routes![super::handle_token]);
-		let client = Client::new(rocket).unwrap();
-		let mut result = client.get("/handle_token?code=amfEasdksak").dispatch();
-		assert_eq!(result.body_string(), Some("amfEasdksak".into()));
+	fn test_validate_route() {
+		//test values and correct return values
+		let tests = ["Battlefield", "mechanicalkeyboards", "doggesawe", "the_donald"];
+		let correct_res = ["true", "true", "false", "true"];
+		//iterate using map and collect results from calling route
+		let actual_res: Vec<Json<JsonValue>> 
+			= tests.iter().map(|sub| validate_route(sub.to_string())).collect();
+		//grab the inner json value returned from the route
+		let actual_res: Vec<String>
+		 	= actual_res.into_iter().map(|json_val| json_val.into_inner().value).collect();
+		//assert that the actual results are the correct results 
+		assert_eq!(actual_res, correct_res);
 	}
 }
