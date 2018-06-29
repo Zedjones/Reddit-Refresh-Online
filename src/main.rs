@@ -8,6 +8,7 @@ extern crate serde_json;
 extern crate reddit_refresh_online;
 extern crate cookie;
 extern crate serde;
+extern crate state;
 #[macro_use]
 extern crate serde_derive;
 
@@ -20,6 +21,7 @@ use cookie::SameSite::Lax;
 use reqwest::header::{Headers, ContentType};
 use std::collections::HashMap;
 use std::str;
+use std::thread::Thread;
 use serde_json::{Value, from_str};
 use reddit_refresh_online::pushbullet::{get_user_name, get_email};
 use reddit_refresh_online::subparser::validate_subreddit;
@@ -47,10 +49,21 @@ struct JsonValue{
 }
 
 //A subreddit paired with searches received in Json form from the client 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
 struct SubSearch {
 	sub: String, 
 	searches: Vec<String>
+}
+
+#[derive(PartialEq, Eq, Hash)]
+struct UserSubSearch{
+	email: String, 
+	sub_search: SubSearch
+}
+
+#[allow(dead_code)]
+struct SearchThreads {
+	map: HashMap<UserSubSearch, Thread>
 }
 
 /**
@@ -171,7 +184,9 @@ fn get_token(code: &PushCode) -> String {
 }
 
 fn main() {
-	rocket::ignite().mount("/", routes![handle_token, index, files, validate_route, process])
+	rocket::ignite()
+		.manage(SearchThreads{ map: HashMap::new() })
+		.mount("/", routes![handle_token, index, files, validate_route, process])
 		.attach(Template::fairing()).launch();
 }
 

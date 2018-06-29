@@ -1,0 +1,2 @@
+ALTER TABLE searches
+ADD COLUMN last_res_url VARCHAR NOT NULL
