@@ -6,6 +6,7 @@ pub struct Search {
     pub email: String,
     pub sub: String,
     pub search: String,
+    pub last_res_url: String
 }
 
 #[derive(Insertable)]
@@ -13,5 +14,6 @@ pub struct Search {
 pub struct NewSearch<'a> {
     pub email: &'a str,
     pub sub: &'a str,
-    pub search: &'a str
+    pub search: &'a str,
+    pub last_res_url: &'a str
 }

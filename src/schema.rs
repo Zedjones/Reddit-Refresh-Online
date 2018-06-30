@@ -13,6 +13,7 @@ table! {
         email -> Varchar,
         sub -> Varchar,
         search -> Varchar,
+        last_res_url -> Varchar,
     }
 }
 

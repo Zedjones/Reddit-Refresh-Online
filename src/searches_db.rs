@@ -72,7 +72,7 @@ pub mod searches_db {
     pub fn add_search(email: &str, sub: &str, search: &str) -> Search {
         use schema::searches;
         use diesel::insert_into;
-        let new_search = NewSearch { email:&email, sub:&sub, search:&search };
+        let new_search = NewSearch { email:&email, sub:&sub, search:&search, last_res_url:&"" };
         let connection = connect();
 
         insert_into(searches::table)
