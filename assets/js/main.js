@@ -1,24 +1,35 @@
-//Click on X to delete todo
-$(".search").on("click", "span", function(event){
-    $(this).parent().fadeOut(500, function() {
-        $(this).remove();
-    });
-    event.stopPropagation();
-});
+// Decide if I want to allow submission on enter keypress
+// $("input[type='text']").keypress(function(event){
+//     if(event.which === 13){
+//         cardCreate();
+//     }
+// });
 
-//Add new Todo
-$("input[type='text']").keypress(function(event){
-    if(event.which === 13){
-        var todoText = $(this).val();
-        $(this).val("");
-        $(".search").append("<li><span><i class='fa fa-trash'></i></span> " + todoText + "</li>");
+let formArray=[];
+
+function cardCreate() {
+    let arr = $('#subSearch').serializeArray();
+    formArray.push(arr);
+    $('#subAppend').append(
+    `<div class="p-2">
+        <div class='card' style='width: 18rem;'>
+            <div class='card-header'>
+                ${arr[0].value}
+            </div>
+            <ul class='list-group list-group-flush card-list'>
+            </ul>
+        </div>
+    </div>`);
+    for(let i = 1; i < arr.length; i++){
+        if(arr[i].value === ""){}
+        else {
+            $('.card-list').append(`<li class="list-group-item">${arr[i].value}</li>`);
+        }
     }
-});
+    $('.card-list').removeClass('card-list');
+    $('#subSearch')[0].reset();
+}
 
-$(".done").click(function(){
-    $("input[type='text']").fadeOut();
-});
-
-$(".edit").click(function(){
-    $("input[type='text']").fadeIn();
+$('#clickClick').on('click', (event) => {
+    cardCreate();
 });

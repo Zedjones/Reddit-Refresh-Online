@@ -7,7 +7,6 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
     <link rel="stylesheet" type="text/css" media="screen" href="assets/css/main.css" />
-    <!-- <script type="text/javascript" src="jquery-3.3.1.min.js"></script> -->
     <script
     src="https://code.jquery.com/jquery-3.3.1.min.js"
     integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
@@ -45,49 +44,102 @@
     </div>
 
     <div class="indented">
-        <h2>Devices:</h2>
-            <div class="deviceList">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Pixel 2XL</h5>
-                        <p class="card-text">Click the button to send pushes to this device.</p>
-                        <div class="btn-group-toggle" data-toggle="buttons">
-                            <label class="btn btn-primary">
-                                <input type="checkbox" checked autocomplete="off"> Push
-                            </label>
-                        </div>
-                    </div>
+
+        <h2>Devices</h2>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Pixel 2XL</h5>
+                <p class="card-text">Click the button to send pushes to this device.</p>
+                <div class="btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-primary">
+                        <input type="checkbox" checked autocomplete="off"> Push
+                    </label>
                 </div>
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Chromebook</h5>
-                        <p class="card-text">Click the button to send pushes to this device.</p>
-                        <div class="btn-group-toggle" data-toggle="buttons">
-                            <label class="btn btn-primary">
-                                <input type="checkbox" checked autocomplete="off"> Push
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Chromebook</h5>
-                        <p class="card-text">Click the button to send pushes to this device.</p>
-                        <div class="btn-group-toggle" data-toggle="buttons">
-                            <label class="btn btn-primary">
-                                <input type="checkbox" checked autocomplete="off"> Push
-                            </label>
-                        </div>
-                    </div>
-                </div>
+            </div>
         </div>
-        <h2>SubReddits:</h2>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Chromebook</h5>
+                <p class="card-text">Click the button to send pushes to this device.</p>
+                <div class="btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-primary">
+                        <input type="checkbox" checked autocomplete="off"> Push
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Chromebook</h5>
+                <p class="card-text">Click the button to send pushes to this device.</p>
+                <div class="btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-primary">
+                        <input type="checkbox" checked autocomplete="off"> Push
+                    </label>
+                </div>
+            </div>
+        </div>
+        <h2>Add a Subreddit Search </h2>
+        <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#exampleModalLong" id="searchBtn">
+            Subreddit Search
+        </button>
+        <a href="#" class="btn btn-primary btn-lg">Submit</a>
+              
+              <!-- Modal -->
+        <div class="modal fade" id="exampleModalLong" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLongTitle">Subreddit Search</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="subSearch">
+                            <div class="form-group">
+                                <label for="subredditName">Subreddit Name</label>
+                                <input type="text" class="form-control" id="subredditName" placeholder="Enter Subreddit" name="subName">
+                                <small class="form-text text-muted">Do not include r/.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="firstTerm">Search Terms</label>
+                                <input type="text" class="form-control" id="firstTerm" placeholder="Search Term" name="search1">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="Search Term" name="search2">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="Search Term" name="searc3">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="Search Term" name="search4">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="Search Term" name="search5">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="clickClick">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap align-items-start" id="subAppend">
+
+        </div>
+
+    </div>
+
+        <!-- <h2>SubReddits:</h2>
         <ul class="flex-container">
             <li class="flex-item">
                 <div class=subRed>
                     <h2>SubReddit Name <span class="done"><i class="fas fa-check fa-sm"></i></span><span class="edit"><i class="fas fa-edit fa-sm"></i></span></h2>
                     <input class="adder" type="text" placeholder="Add Phrase">
-            
+
                     <ul class="search">
                         <li><span><i class="fa fa-trash"></i></span>Add a phrase</li>
                         <li><span><i class="fa fa-trash"></i></span>Add a phrase</li>
@@ -96,7 +148,7 @@
                 </div> 
             </li> 
         </ul>
-    </div>
+    </div> -->
 
     <script type="text/javascript" src="assets/js/main.js"></script>
 </body>
