@@ -5,7 +5,7 @@ pub mod searches_db {
     use diesel::pg::PgConnection;
     use dotenv::dotenv;
     use std::env;
-    use models::{Search, NewSearch};
+    use models::{Search, NewSearch, NewUserInfo, UserInfo};
 
     /**
      * Function to connect to the database specified in .env
@@ -107,6 +107,19 @@ pub mod searches_db {
             _ => Err("Invalid email, sub, or search to delete".to_string())
         }
 
+    }
+
+    pub fn get_interval(email: String) -> f64 {
+        use schema::user_info;
+        let error = format!("Error loading interval for {}", email);
+        let connection = connect();
+
+        let weird_vec = user_info::table
+            .filter(user_info::email.eq(email))
+            .load::<UserInfo>(&connection)
+            .expect(&error);
+
+        weird_vec[0].interval
     }
 
 }

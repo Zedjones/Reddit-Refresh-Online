@@ -786,7 +786,6 @@ dependencies = [
  "serde 1.0.68 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.68 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.22 (registry+https://github.com/rust-lang/crates.io-index)",
- "state 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

@@ -8,7 +8,6 @@ extern crate serde_json;
 extern crate reddit_refresh_online;
 extern crate cookie;
 extern crate serde;
-extern crate state;
 #[macro_use]
 extern crate serde_derive;
 
@@ -75,6 +74,7 @@ struct SearchThreads {
 fn process(mut cookies: Cookies, sub_search: Json<SubSearch>) 
 -> Result<(), Failure>{
 	// TODO: test that this logic actually works
+	// TODO: start the search threads and add them to the global state
 	//grab token from cookies and get the email attached to that token
 	let token = cookies.get_private("push_token").unwrap().to_owned();
 	let email = get_email(&token.value());

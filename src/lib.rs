@@ -116,6 +116,7 @@ pub mod pushbullet{
     use reqwest::header::{Headers, ContentType};
     use serde_json::{Value, from_str};
     use super::subparser::SubResult;
+    use super::searches_db;
 
     //Constant urls for the Pushbullet APIs
     const DEVICES_URL: &str = "https://api.pushbullet.com/v2/devices";
@@ -200,5 +201,13 @@ pub mod pushbullet{
         let content = content.text().unwrap();
         let json: Value = from_str(&content).unwrap();
         json["email"].as_str().unwrap().to_string()
+    }
+
+    pub fn check_user_results(email: String) {
+        let searches = searches_db::searches_db::get_searches(email);
+        for search in searches {
+
+        }
+        ()
     }
 }
