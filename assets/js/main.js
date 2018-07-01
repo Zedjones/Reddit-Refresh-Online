@@ -10,6 +10,7 @@ let formArray=[];
 function cardCreate() {
     let arr = $('#subSearch').serializeArray();
     formArray.push(arr);
+    console.log(JSON.stringify(formArray));
     $('#subAppend').append(
     `<div class="p-2">
         <div class='card' style='width: 18rem;'>

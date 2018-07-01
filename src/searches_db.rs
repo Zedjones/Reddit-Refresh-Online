@@ -109,7 +109,7 @@ pub mod searches_db {
 
     }
 
-    pub fn get_interval(email: String) -> f64 {
+    pub fn get_interval(email: &str) -> f64 {
         use schema::user_info;
         let error = format!("Error loading interval for {}", email);
         let connection = connect();
@@ -120,6 +120,20 @@ pub mod searches_db {
             .expect(&error);
 
         weird_vec[0].interval
+    }
+
+    pub fn update_last_res(email_f: String, sub_f: String, search_f: String, new_res: String) {
+        use schema::searches::dsl::*;
+        use diesel::update;
+        let connection = connect();
+
+        update(searches.filter(email.eq(email_f)
+            .and(sub.eq(sub_f)).and(search.eq(search_f))))
+            .set(last_res_url.eq(new_res))
+            .execute(&connection)
+            .expect("Error updating url");
+
+        ()
     }
 
 }
