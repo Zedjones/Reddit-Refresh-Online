@@ -5,7 +5,7 @@ pub mod searches_db {
     use diesel::pg::PgConnection;
     use dotenv::dotenv;
     use std::env;
-    use models::{Search, NewSearch, NewUserInfo, UserInfo};
+    use models::{Search, NewSearch, UserInfo};
 
     /**
      * Function to connect to the database specified in .env

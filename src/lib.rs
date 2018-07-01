@@ -116,7 +116,7 @@ pub mod pushbullet{
     use reqwest::header::{Headers, ContentType};
     use serde_json::{Value, from_str};
     use super::subparser::SubResult;
-    use super::searches_db;
+    use super::searches_db::searches_db::{get_interval, get_searches};
 
     //Constant urls for the Pushbullet APIs
     const DEVICES_URL: &str = "https://api.pushbullet.com/v2/devices";
@@ -204,10 +204,15 @@ pub mod pushbullet{
     }
 
     pub fn check_user_results(email: String) {
-        let searches = searches_db::searches_db::get_searches(email);
-        for search in searches {
-
+        let searches = get_searches(email.clone());
+        let _interval = get_interval(email);
+        loop{ 
+            for _search in &searches {
+                //TODO: actually check the results and update last result in DB
+            }
+            break;
         }
+
         ()
     }
 }
