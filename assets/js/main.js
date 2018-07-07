@@ -12,7 +12,7 @@ function cardCreate() {
     let sub = arr[0].value
     let searches = []
     arr.slice(1).forEach((search) => {
-        if (search != ""){
+        if (search.value) {
             searches.push(search.value);
         }
     });
