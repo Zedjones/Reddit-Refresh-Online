@@ -32,8 +32,6 @@ const CLIENT_ID: &str = "PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1";
 const CLIENT_SECRET: &str = "VdoOJb5BVCPNjqD0b02dVrIVZzkVD2oY";
 const TOKEN: &str = "o.dlldl3QXAZ1zgfFsAZQyTS673KnNbf2w";
 
-type SubSearchArray = Vec<JsonSearch>;
-
 //The Pushbullet code received from the handle_token route 
 #[allow(dead_code)]
 #[derive(FromForm)]
@@ -49,22 +47,17 @@ struct JsonValue{
 	value: String
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
-struct JsonSearch {
-	name: String, 
-	value: String
-}
-
 //A subreddit paired with searches received in Json form from the client 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
 struct SubSearch {
-	arrays: Vec<SubSearchArray> 
+	sub: String, 
+	searches: Vec<String>
 }
 
 #[derive(PartialEq, Eq, Hash)]
 struct UserSubSearch{
 	email: String, 
-	sub_search: SubSearchArray
+	sub_search: SubSearch
 }
 
 #[allow(dead_code)]
@@ -85,20 +78,17 @@ fn process(mut cookies: Cookies, sub_search: Json<SubSearch>)
 	//grab token from cookies and get the email attached to that token
 	let token = cookies.get_private("push_token").unwrap().to_owned();
 	let email = get_email(&token.value());
-	for search in &sub_search.arrays{
-		let sub = &search[0].value;
-		println!("Sub: {}", sub);
-		//delete the previous searches attached to this user and subreddit
-		match delete_sub_searches(&email, &sub) {
-			Ok(_) => (),
-			Err(_) => return Err(Failure(Status::NotAcceptable))
-		};
-		//add all of the new searches 
-		for term in &search[1..] {
-			add_search(&email, &sub, &term.value);
-			println!("\tValue: {}", &term.value);
-		}
+	//delete the previous searches attached to this user and subreddit
+	match delete_sub_searches(&email, &sub_search.sub) {
+		Ok(_) => (),
+		Err(_) => return Err(Failure(Status::NotAcceptable))
+	};
+	//add all of the new searches 
+	for search in &sub_search.searches {
+		add_search(&email, &sub_search.sub, &search);
 	}
+	println!("{}", sub_search.sub);
+	println!("{:#?}", sub_search.searches);
 	Ok(())
 }
 
