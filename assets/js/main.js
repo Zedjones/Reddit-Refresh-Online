@@ -4,12 +4,21 @@
 //         cardCreate();
 //     }
 // });
-
-let formArray=[];
-
+ 
+var searchObj = {subs: []};
+ 
 function cardCreate() {
     let arr = $('#subSearch').serializeArray();
-    formArray.push(arr);
+    let sub = arr[0].value
+    let searches = []
+    arr.slice(1).forEach((search) => {
+        if (search.value != ""){
+            searches.push(search.value);
+        }
+    });
+    let subObj = {sub: sub, searches: searches}
+    searchObj.subs.push(subObj);
+    console.log(JSON.stringify(searchObj));
     $('#subAppend').append(
     `<div class="p-2">
         <div class='card' style='width: 18rem;'>
@@ -29,7 +38,7 @@ function cardCreate() {
     $('.card-list').removeClass('card-list');
     $('#subSearch')[0].reset();
 }
-
+ 
 $('#clickClick').on('click', (event) => {
     cardCreate();
 });
