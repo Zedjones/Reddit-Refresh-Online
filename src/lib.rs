@@ -3,6 +3,9 @@ extern crate diesel;
 extern crate dotenv;
 extern crate reqwest;
 extern crate serde_json;
+extern crate rocket_contrib;
+#[macro_use]
+extern crate serde_derive;
 
 pub mod schema;
 pub mod models;
@@ -115,6 +118,10 @@ pub mod pushbullet{
     use reqwest::Client;
     use reqwest::header::{Headers, ContentType};
     use serde_json::{Value, from_str};
+    use std::thread::Thread;
+    use std::sync::mpsc;
+    use std::sync::Mutex;
+    use std::sync::mpsc::{Receiver, Sender};
     use super::subparser::{SubResult, get_results};
     use super::searches_db::searches_db::{get_interval, get_searches};
 
@@ -122,6 +129,36 @@ pub mod pushbullet{
     const DEVICES_URL: &str = "https://api.pushbullet.com/v2/devices";
     const PUSHES_URL: &str = "https://api.pushbullet.com/v2/pushes";
     const USER_URL: &str = "https://api.pushbullet.com/v2/users/me";
+
+    type Email = String;
+
+    //A subreddit paired with searches received in Json form from the client 
+    #[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
+    pub struct SubSearch {
+        pub sub: String, 
+        pub searches: Vec<String>
+    }
+
+    #[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
+    pub struct SubSearches {
+        pub subs: Vec<SubSearch>
+    }
+
+    #[derive(PartialEq, Eq, Hash)]
+    pub struct UserSubSearch{
+        pub email: String, 
+        pub sub_search: String
+    }
+
+    pub struct ReceiverSender {
+        pub sender: Mutex<Sender<bool>>,
+        pub receiver: Mutex<Receiver<bool>>
+    }
+
+    #[allow(dead_code)]
+    pub struct SearchThreads {
+        pub map: HashMap<Email, ReceiverSender>
+    }
 
     /**
      * Get the devices for a user given their Pushbullet API token
@@ -220,6 +257,6 @@ pub mod pushbullet{
     }
 
     pub fn handle_result(_email: &str, (_url, _title): SubResult, _last_result: &str) {
-        
+
     }
 }

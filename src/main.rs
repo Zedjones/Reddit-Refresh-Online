@@ -15,14 +15,17 @@ use std::path::{Path, PathBuf};
 use rocket_contrib::{Template, Json};
 use rocket::response::{NamedFile, Redirect, Failure};
 use rocket::http::{Cookie, Cookies, Status};
+use rocket::State;
 use reqwest::Client;
 use cookie::SameSite::Lax;
 use reqwest::header::{Headers, ContentType};
 use std::collections::HashMap;
 use std::str;
 use std::thread::Thread;
+use std::sync::mpsc;
 use serde_json::{Value, from_str};
-use reddit_refresh_online::pushbullet::{get_user_name, get_email};
+use reddit_refresh_online::pushbullet::{get_user_name, get_email,
+									    SubSearches, SearchThreads};
 use reddit_refresh_online::subparser::validate_subreddit;
 use reddit_refresh_online::searches_db::searches_db::{add_search, delete_sub_searches};
 
@@ -47,7 +50,7 @@ struct JsonValue{
 	value: String
 }
 
-//A subreddit paired with searches received in Json form from the client 
+/* //A subreddit paired with searches received in Json form from the client 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
 struct SubSearch {
 	sub: String, 
@@ -55,7 +58,7 @@ struct SubSearch {
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
-struct SubSearches {
+struct SubSearches {rx
 	subs: Vec<SubSearch>
 }
 
@@ -68,7 +71,7 @@ struct UserSubSearch{
 #[allow(dead_code)]
 struct SearchThreads {
 	map: HashMap<UserSubSearch, Thread>
-}
+} */
 
 /**
  * Route to process a Json body from the client containing a subreddit 
@@ -76,13 +79,16 @@ struct SearchThreads {
  * @param sub - a deserialized SubSearch object from the request body
  */
 #[post("/process", format="application/json", data="<sub_searches>")]
-fn process(mut cookies: Cookies, sub_searches: Json<SubSearches>) 
--> Result<(), Failure>{
+fn process(mut cookies: Cookies, sub_searches: Json<SubSearches>, 
+		   search_threads: State<SearchThreads>) -> Result<(), Failure> {
+
 	// TODO: test that this logic actually works
 	// TODO: start the search threads and add them to the global state
 	//grab token from cookies and get the email attached to that token
+	// TODO: prevent this from crashing when there is no cookie
 	let token = cookies.get_private("push_token").unwrap().to_owned();
 	let email = get_email(&token.value());
+
 	//delete the previous searches attached to this user and subreddit
 	for sub_search in &sub_searches.subs {
 		match delete_sub_searches(&email, &sub_search.sub) {
@@ -92,10 +98,17 @@ fn process(mut cookies: Cookies, sub_searches: Json<SubSearches>)
 		//add all of the new searches 
 		for search in &sub_search.searches {
 			add_search(&email, &sub_search.sub, &search);
+			if search_threads.map.contains_key(&email) {
+				let conc_thread = search_threads.map.get(&email).unwrap();
+				//TODO: actually do error checking 
+				conc_thread.sender.lock().unwrap().send(true).unwrap();
+				//TODO: move this data to a thread and get a thread working
+				let (tx, rx) = mpsc::channel::<bool>();
+			}
 		}
 		println!("{}", sub_search.sub);
 		println!("{:#?}", sub_search.searches);
-	}
+	}	
 	Ok(())
 }
 
