@@ -83,7 +83,8 @@
         <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#exampleModalLong" id="searchBtn">
             Subreddit Search
         </button>
-        <a href="#" class="btn btn-primary btn-lg">Submit</a>
+        <a href="#" class="btn btn-primary btn-lg" id="bigSubmit">Submit</a>
+        <a href="#" class="btn btn-primary btn-lg" id="editBtn">Edit</a>
               
               <!-- Modal -->
         <div class="modal fade" id="exampleModalLong" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
@@ -99,18 +100,18 @@
                         <form id="subSearch">
                             <div class="form-group">
                                 <label for="subredditName">Subreddit Name</label>
-                                <input type="text" class="form-control" id="subredditName" placeholder="Enter Subreddit" name="subName">
-                                <small class="form-text text-muted">Do not include r/.</small>
+                                <input type="text" class="form-control" class="subredditName" placeholder="Enter Subreddit" name="subName">
+                                <small class="form-text text-muted">Must be a valid subreddit.</small>
                             </div>
                             <div class="form-group">
                                 <label for="firstTerm">Search Terms</label>
-                                <input type="text" class="form-control" id="firstTerm" placeholder="Search Term" name="search1">
+                                <input type="text" class="form-control" class="firstTerm" placeholder="Search Term" name="search1">
                             </div>
                             <div class="form-group">
                                 <input type="text" class="form-control" placeholder="Search Term" name="search2">
                             </div>
                             <div class="form-group">
-                                <input type="text" class="form-control" placeholder="Search Term" name="searc3">
+                                <input type="text" class="form-control" placeholder="Search Term" name="search3">
                             </div>
                             <div class="form-group">
                                 <input type="text" class="form-control" placeholder="Search Term" name="search4">
