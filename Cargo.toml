@@ -13,7 +13,6 @@ serde_json = "1.0.22"
 cookie = "0.9.2"
 serde_derive = "1.0.68"
 serde = "1.0.66"
-state = "0.4.1"
 
 [dependencies.rocket_contrib]
 version = "*"
