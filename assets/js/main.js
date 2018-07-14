@@ -5,20 +5,10 @@
 //     }
 // });
  
-var searchObj = {subs: []};
+let searchObj = {subs: []};
+let masterArr = [];
  
-function cardCreate() {
-    let arr = $('#subSearch').serializeArray();
-    let sub = arr[0].value
-    let searches = []
-    arr.slice(1).forEach((search) => {
-        if (search.value != ""){
-            searches.push(search.value);
-        }
-    });
-    let subObj = {sub: sub, searches: searches}
-    searchObj.subs.push(subObj);
-    console.log(JSON.stringify(searchObj));
+function cardCreate(arr) {
     $('#subAppend').append(
     `<div class="p-2">
         <div class='card' style='width: 18rem;'>
@@ -38,7 +28,34 @@ function cardCreate() {
     $('.card-list').removeClass('card-list');
     $('#subSearch')[0].reset();
 }
+
+function objCreate(arr){
+    let sub = arr[0].value
+    let searches = []
+    arr.slice(1).forEach((search) => {
+        if (search.value != ""){
+            searches.push(search.value);
+        }
+    });
+    let subObj = {sub: sub, searches: searches}
+    searchObj.subs.push(subObj);
+}
  
 $('#clickClick').on('click', (event) => {
-    cardCreate();
+    let arr = $('#subSearch').serializeArray();
+    masterArr.push(arr);
+    cardCreate(arr);
+});
+
+$('#bigSubmit').on('click', (event) => {
+    masterArr.forEach((arr) => {
+        objCreate(arr);
+    });
+});
+
+$('#editBtn').on('click', (event) => {
+    masterArr.forEach((search) => {
+        console.log(search[0].value);
+    });
+    $('.form-group input')[0].val(masterArr[0][0].value);
 });
