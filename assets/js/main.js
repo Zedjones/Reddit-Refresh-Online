@@ -72,9 +72,14 @@ function editPanelCheck(subName) {
 function unactivateSubs() {
     let arr = document.querySelectorAll('.rand');
     arr.forEach((subName) => {
-        arr.forEach((sub) => {
-            sub.classList.remove('active');
-        });
+        subName.classList.remove('active');
+    });
+}
+
+function updateSubList() {
+    let arr = document.querySelectorAll('.rand');
+    arr.forEach((subName) => {
+        subName.parentNode.removeChild(subName);
     });
 }
 
@@ -97,7 +102,9 @@ $('#bigSubmit').on('click', (event) => {
 
 // Allows user to pick a sub search to edit
 $('#editBtn').on('click', (event) => {
-    unactivateSubs();
+    document.querySelector('#deleteSub').disabled = true;
+    document.querySelector('#editSub').disabled = true;
+    removeCards();
     masterArr.forEach((search) => {
         if(editPanelCheck(search[0].value)) {}
         else {
@@ -109,9 +116,12 @@ $('#editBtn').on('click', (event) => {
             checked.push(search[0].value);
         }
     });
+    unactivateSubs();
     let arr = document.querySelectorAll('.rand');
     arr.forEach((subName) => {
         subName.onclick = () => {
+            document.querySelector('#deleteSub').disabled = false;
+            document.querySelector('#editSub').disabled = false;
             arr.forEach((sub) => {
                 sub.classList.remove('active');
             });
@@ -123,6 +133,7 @@ $('#editBtn').on('click', (event) => {
 
 // fills out sub search modal with correct info from original serach
 $('#editSub').on('click', (event) => {
+    console.log(masterArr);
     let arr = [];
     let index = 0;
     masterArr.forEach((subSearch) => {
@@ -144,13 +155,15 @@ $('#deleteSub').on('click', (event) => {
     masterArr.forEach((subSearch) => {
         if(subSearch[0].value == activeSub) {
             masterArr.splice(index, 1);
+            console.log(masterArr);
         }
         index++;
     });
-    removeCards();
+    updateSubList();
     masterArr.forEach((arr) => {
         cardCreate(arr);
     });
+
 });
 
 // clears out values in sub search modal 
