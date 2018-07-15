@@ -46,7 +46,7 @@
     <div class="indented">
 
         <h2>Devices</h2>
-        <div class="card">
+        <!-- <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Pixel 2XL</h5>
                 <p class="card-text">Click the button to send pushes to this device.</p>
@@ -78,20 +78,72 @@
                     </label>
                 </div>
             </div>
+        </div> -->
+
+        <div class="d-flex flex-wrap align-items-start">
+            <div class="p-2">
+                <div class='card' style='width: 15rem;'>
+                    <div class="card-body">
+                        <h5 class="card-title deviceName">Chromebook</h5>
+                        <p class="card-text">Click the button to enable this device to receive pushes.</p>
+                        <div class="btn-group-toggle" data-toggle="buttons">
+                            <label class="btn btn-primary pushBtn">
+                                <input type="checkbox" checked autocomplete="off"> Push
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-2">
+                <div class='card' style='width: 15rem;'>
+                    <div class="card-body">
+                        <h5 class="card-title deviceName">Pixel 2XL</h5>
+                        <p class="card-text">Click the button to enable this device to receive pushes.</p>
+                        <div class="btn-group-toggle" data-toggle="buttons">
+                            <label class="btn btn-primary pushBtn">
+                                <input type="checkbox" checked autocomplete="off"> Push
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-2">
+                <div class='card' style='width: 15rem;'>
+                    <div class="card-body">
+                        <h5 class="card-title deviceName">IPad Mini</h5>
+                        <p class="card-text">Click the button to enable this device to receive pushes.</p>
+                        <div class="btn-group-toggle" data-toggle="buttons">
+                            <label class="btn btn-primary pushBtn">
+                                <input type="checkbox" checked autocomplete="off"> Push
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
         <h2>Add a Subreddit Search </h2>
-        <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#exampleModalLong" id="searchBtn">
+        <button type="button" class="btn btn-dark btn-lg" data-toggle="modal" data-target="#submitModal" id="searchBtn">
             Subreddit Search
         </button>
-        <a href="#" class="btn btn-primary btn-lg" id="bigSubmit">Submit</a>
-        <a href="#" class="btn btn-primary btn-lg" id="editBtn">Edit</a>
-              
-              <!-- Modal -->
-        <div class="modal fade" id="exampleModalLong" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+        <a href="#" class="btn btn-dark btn-lg" data-toggle="modal" data-target="#editModal" id="editBtn">Edit</a>
+        <a href="#" class="btn btn-dark btn-lg" id="bigSubmit">Submit</a>
+        
+        
+        <!-- Where sub searches get added onto the page -->
+        <div class="d-flex flex-wrap align-items-start" id="subAppend">
+        </div>
+        
+
+        <!-- Modal -->
+        <!-- The object that pops up when you hit sub search -->
+        <div class="modal fade" id="submitModal" tabindex="-1" role="dialog" aria-labelledby="submitModalTitle" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLongTitle">Subreddit Search</h5>
+                        <h5 class="modal-title" id="submitModalTitle">Subreddit Search</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                         </button>
@@ -128,28 +180,30 @@
                 </div>
             </div>
         </div>
-        <div class="d-flex flex-wrap align-items-start" id="subAppend">
 
+
+        <!-- Modal that pops up when you hit edit -->
+        <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalTitle" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editModalTitle">Pick a Subreddit</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="list-group" id="editList">                        
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-danger" data-dismiss="modal" id="deleteSub">Delete</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" data-toggle="modal" data-target="#submitModal" id="editSub">Edit</button>
+                    </div>
+                </div>
+            </div>
         </div>
-
     </div>
-
-        <!-- <h2>SubReddits:</h2>
-        <ul class="flex-container">
-            <li class="flex-item">
-                <div class=subRed>
-                    <h2>SubReddit Name <span class="done"><i class="fas fa-check fa-sm"></i></span><span class="edit"><i class="fas fa-edit fa-sm"></i></span></h2>
-                    <input class="adder" type="text" placeholder="Add Phrase">
-
-                    <ul class="search">
-                        <li><span><i class="fa fa-trash"></i></span>Add a phrase</li>
-                        <li><span><i class="fa fa-trash"></i></span>Add a phrase</li>
-                        <li><span><i class="fa fa-trash"></i></span>Add a phrase</li>
-                    </ul>
-                </div> 
-            </li> 
-        </ul>
-    </div> -->
 
     <script type="text/javascript" src="assets/js/main.js"></script>
 </body>
