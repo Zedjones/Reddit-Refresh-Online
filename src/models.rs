@@ -1,5 +1,4 @@
-use super::schema::searches;
-use super::schema::user_info;
+use super::schema::{searches, user_info, devices};
 
 #[derive(Queryable)]
 pub struct Search {
@@ -30,4 +29,20 @@ pub struct UserInfo {
 pub struct NewUserInfo<'a> {
     pub email: &'a str,
     pub interval: f64
+}
+
+#[derive(Queryable)]
+pub struct Device {
+    pub id: i32, 
+    pub email: String, 
+    pub device_id: String,
+    pub is_active: bool
+}
+
+#[derive(Insertable)]
+#[table_name="devices"]
+pub struct NewDevice<'a> {
+    pub email: &'a str,
+    pub device_id: &'a str, 
+    pub is_active: bool
 }
