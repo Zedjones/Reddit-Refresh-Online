@@ -21,11 +21,13 @@ use cookie::SameSite::Lax;
 use reqwest::header::{Headers, ContentType};
 use std::collections::HashMap;
 use std::str;
-use std::thread::Thread;
+use std::sync::Mutex;
+use std::thread;
 use std::sync::mpsc;
 use serde_json::{Value, from_str};
 use reddit_refresh_online::pushbullet::{get_user_name, get_email,
-									    SubSearches, SearchThreads};
+									    SubSearches, SearchThreads,
+										check_user_results};
 use reddit_refresh_online::subparser::validate_subreddit;
 use reddit_refresh_online::searches_db::searches_db::{add_search, delete_sub_searches};
 
@@ -98,13 +100,22 @@ fn process(mut cookies: Cookies, sub_searches: Json<SubSearches>,
 		//add all of the new searches 
 		for search in &sub_search.searches {
 			add_search(&email, &sub_search.sub, &search);
-			if search_threads.map.contains_key(&email) {
-				let conc_thread = search_threads.map.get(&email).unwrap();
+			//TODO: do error checking here as well
+			let mut search_threads = search_threads.map.lock().unwrap();
+			if search_threads.contains_key(&email) {
+				let conc_thread = search_threads.get(&email).unwrap();
 				//TODO: actually do error checking 
-				conc_thread.sender.lock().unwrap().send(true).unwrap();
-				//TODO: move this data to a thread and get a thread working
-				let (tx, rx) = mpsc::channel::<bool>();
+				conc_thread.lock().unwrap().send(true).unwrap();
 			}
+			//TODO: make sure this works 
+			let (tx, rx) = mpsc::channel::<bool>();
+			let tx = tx.clone();
+			let email_clone = email.clone();
+			let _result_thread = thread::spawn(move || {
+				check_user_results(email_clone, rx);
+			});
+			let sender = Mutex::from(tx);
+			search_threads.insert(email.clone(), sender);
 		}
 		println!("{}", sub_search.sub);
 		println!("{:#?}", sub_search.searches);
@@ -205,7 +216,7 @@ fn get_token(code: &PushCode) -> String {
 
 fn main() {
 	rocket::ignite()
-		.manage(SearchThreads{ map: HashMap::new() })
+		.manage(SearchThreads{ map: Mutex::new(HashMap::new()) })
 		.mount("/", routes![handle_token, index, files, validate_route, process])
 		.attach(Template::fairing()).launch();
 }

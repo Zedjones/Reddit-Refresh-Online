@@ -118,8 +118,6 @@ pub mod pushbullet{
     use reqwest::Client;
     use reqwest::header::{Headers, ContentType};
     use serde_json::{Value, from_str};
-    use std::thread::Thread;
-    use std::sync::mpsc;
     use std::sync::Mutex;
     use std::sync::mpsc::{Receiver, Sender};
     use super::subparser::{SubResult, get_results};
@@ -150,14 +148,9 @@ pub mod pushbullet{
         pub sub_search: String
     }
 
-    pub struct ReceiverSender {
-        pub sender: Mutex<Sender<bool>>,
-        pub receiver: Mutex<Receiver<bool>>
-    }
-
     #[allow(dead_code)]
     pub struct SearchThreads {
-        pub map: HashMap<Email, ReceiverSender>
+        pub map: Mutex<HashMap<Email, Mutex<Sender<bool>>>>
     }
 
     /**
@@ -240,10 +233,17 @@ pub mod pushbullet{
         json["email"].as_str().unwrap().to_string()
     }
 
-    pub fn check_user_results(email: String) {
+    pub fn check_user_results(email: String, rx: Receiver<bool>) {
         let searches = get_searches(email.clone());
         let _interval = get_interval(&email);
         loop{ 
+            match rx.try_recv() {
+                Ok(val) => match val {
+                    true => return,
+                    false => ()
+                },
+                Err(_) => ()
+            }
             for search in &searches {
                 let sub = &search.sub;
                 let query = &search.search;
