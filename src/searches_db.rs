@@ -62,6 +62,37 @@ pub mod searches_db {
         }
     }
 
+    pub fn replace_sub_searches(email_d: &str, sub_d: &str, mut sub_searches: Vec<String>)
+    -> Result<(), String> {
+        use schema::searches::dsl::*;
+        use diesel::{delete, insert_into};
+        use diesel::dsl::{exists, select};
+
+        let connection = connect();
+
+        let _num_deleted = delete(searches.filter(email.eq(email_d)
+            .and(sub.eq(sub_d))
+            .and(search.eq_any(&sub_searches))))
+            .execute(&connection)
+            .expect("Error deleting searches");
+
+        //FIXME: go back and make the Err statement do something meaningful
+        sub_searches.retain(|ref sub_search| 
+            match select(exists(searches.filter(
+            search.eq(sub_search)))).get_result(&connection)
+            {
+                Ok(false) => true, 
+                Ok(_) => false, 
+                Err(_) => false
+            });
+
+        for search_d in &sub_searches {
+			add_search(&email_d, &sub_d, &search_d);
+        }
+
+        Ok(())
+    }
+
     /**
      * Add a search with the provided email, subreddit, and search term 
      * @param email - the email to use for this item 

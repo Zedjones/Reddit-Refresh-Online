@@ -119,6 +119,8 @@ pub mod pushbullet{
     use reqwest::header::{Headers, ContentType};
     use serde_json::{Value, from_str};
     use std::sync::Mutex;
+    use std::thread;
+    use std::time::Duration;
     use std::sync::mpsc::{Receiver, Sender};
     use super::subparser::{SubResult, get_results};
     use super::searches_db::searches_db::{get_interval, get_searches};
@@ -233,9 +235,18 @@ pub mod pushbullet{
         json["email"].as_str().unwrap().to_string()
     }
 
+    /**
+     * Handles the checking loop for a given user
+     * @param email - the user's email to handle search refreshing for
+     * @param rx - an mpsc receiver to enable communication between 
+     * our main thread and our checking worker threads 
+     */
     pub fn check_user_results(email: String, rx: Receiver<bool>) {
         let searches = get_searches(email.clone());
-        let _interval = get_interval(&email);
+        let interval = get_interval(&email);
+        let seconds = interval.trunc() as u64;
+        let nano = (interval.fract() * 1_000_000.0) as u32;
+        let duration = Duration::new(seconds, nano);
         loop{ 
             match rx.try_recv() {
                 Ok(val) => match val {
@@ -251,12 +262,11 @@ pub mod pushbullet{
                     query.clone()).unwrap();
                 handle_result(&email, result, &search.last_res_url);
             }
-            break;
+            thread::sleep(duration);
         }
-        ()
     }
 
     pub fn handle_result(_email: &str, (_url, _title): SubResult, _last_result: &str) {
-
+        
     }
 }
