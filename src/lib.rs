@@ -3,6 +3,7 @@ extern crate diesel;
 extern crate dotenv;
 extern crate reqwest;
 extern crate serde_json;
+extern crate hyper;
 extern crate rocket_contrib;
 #[macro_use]
 extern crate serde_derive;
@@ -116,7 +117,7 @@ pub mod pushbullet{
 
     use std::collections::HashMap;
     use reqwest::Client;
-    use reqwest::header::{Headers, ContentType};
+    use hyper::header::{HeaderMap, HeaderValue};
     use serde_json::{Value, from_str};
     use std::sync::Mutex;
     use std::thread;
@@ -194,13 +195,12 @@ pub mod pushbullet{
         for device in devices{
             let client = Client::new();
             let mut data = HashMap::new();
-            let mut headers = Headers::new();
+            let mut headers = HeaderMap::new();
             data.insert("title", title.to_string());
             data.insert("url", url.to_string());
             data.insert("type", "link".to_string());
             data.insert("device_iden", device.to_string());
-            headers.set(ContentType::json());
-            headers.set_raw("Access-Token", token);
+            headers.insert("Access-Token", HeaderValue::from_str(token).unwrap());
             client.post(PUSHES_URL).headers(headers).json(&data).send().unwrap();
         }
     }

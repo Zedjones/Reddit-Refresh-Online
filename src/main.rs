@@ -1,13 +1,13 @@
-#![feature(plugin, custom_derive, decl_macro)]
-#![plugin(rocket_codegen)]
+#![feature(plugin, decl_macro, proc_macro_hygiene, custom_attribute)]
 
-extern crate rocket;
+#[macro_use] extern crate rocket;
 extern crate rocket_contrib;
 extern crate reqwest;
 extern crate serde_json;
 extern crate reddit_refresh_online;
 extern crate cookie;
 extern crate serde;
+extern crate hyper;
 #[macro_use]
 extern crate serde_derive;
 
@@ -18,7 +18,7 @@ use rocket::http::{Cookie, Cookies, Status};
 use rocket::State;
 use reqwest::Client;
 use cookie::SameSite::Lax;
-use reqwest::header::{Headers, ContentType};
+use hyper::header::{HeaderMap, HeaderValue};
 use std::collections::HashMap;
 use std::str;
 use std::sync::Mutex;
@@ -109,7 +109,6 @@ fn process(mut cookies: Cookies, sub_searches: Json<SubSearches>,
 			}
 			//TODO: make sure this works 
 			let (tx, rx) = mpsc::channel::<bool>();
-			let tx = tx.clone();
 			let email_clone = email.clone();
 			let _result_thread = thread::spawn(move || {
 				check_user_results(email_clone, rx);
@@ -202,9 +201,8 @@ fn get_token(code: &PushCode) -> String {
 	data.insert("client_id", CLIENT_ID);
 
 	//create headers to specify content type and client access token
-	let mut headers = Headers::new();
-	headers.set(ContentType::json());
-	headers.set_raw("Access-Token", TOKEN);
+	let mut headers = HeaderMap::new();
+	headers.insert("Access-Token", HeaderValue::from_static(TOKEN));
 
 	content.headers(headers).json(&data);
 
