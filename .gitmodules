@@ -1,0 +1,3 @@
+[submodule "Reddit-Refresh-Go"]
+	path = Reddit-Refresh-Go
+	url = https://github.com/Zedjones/Reddit-Refresh-Go
