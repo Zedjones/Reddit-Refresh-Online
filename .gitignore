@@ -2,3 +2,5 @@ target
 *.code-workspace
 .vscode
 .env
+RROnline/password
+RROnline/username
