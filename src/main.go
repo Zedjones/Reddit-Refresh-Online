@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo"
 
-	"../reddit_refresh_online"
+	"../RROnline"
 )
 
 type isValid struct {
@@ -28,7 +28,7 @@ func validateRoute(c echo.Context) error {
 	if sub == "" {
 		return c.NoContent(http.StatusNotFound)
 	}
-	jsonBody := &isValid{reddit_refresh_online.ValidateSub(sub)}
+	jsonBody := &isValid{RROnline.ValidateSub(sub)}
 	return c.JSON(http.StatusOK, jsonBody)
 }
 
@@ -37,7 +37,7 @@ func handleToken(c echo.Context) error {
 	if code == "" {
 		return c.NoContent(http.StatusNotFound)
 	}
-	userTok := reddit_refresh_online.GetToken(code)
+	userTok := RROnline.GetToken(code)
 	jsonBody := &userToken{userTok}
 	return c.JSON(http.StatusOK, jsonBody)
 }

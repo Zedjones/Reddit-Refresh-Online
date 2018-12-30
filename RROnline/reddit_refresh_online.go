@@ -1,4 +1,4 @@
-package reddit_refresh_online
+package RROnline
 
 import (
 	"bytes"
