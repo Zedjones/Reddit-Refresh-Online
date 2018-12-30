@@ -1,6 +1,7 @@
 package reddit_refresh_online
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +12,10 @@ import (
 
 const ABOUT_URL = "https://www.reddit.com/%s/about.json"
 const USER_URL = "https://api.pushbullet.com/v2/users/me"
+const OAUTH_URL = "https://api.pushbullet.com/oauth2/token"
+const CLIENT_ID = "PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1"
+const CLIENT_SECRET = "VdoOJb5BVCPNjqD0b02dVrIVZzkVD2oY"
+const TOKEN = "o.OldUc0rKEAt9xhYaHpfeXlUksvVBNKzv"
 
 func ValidateSub(sub string) bool {
 	if !strings.Contains(sub, "r/") {
@@ -80,4 +85,29 @@ func GetEmail(token string) string {
 		return ""
 	}
 	return email
+}
+
+func GetToken(token string) string {
+	dataMap := make(map[string]string)
+	dataMap["client_secret"] = CLIENT_SECRET
+	dataMap["client_id"] = CLIENT_ID
+	dataMap["grant_type"] = "authorization_code"
+	dataMap["code"] = token
+	jsonBuf, err := json.Marshal(dataMap)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error converting data map in JSON string.")
+	}
+	req, err := http.NewRequest("POST", OAUTH_URL, bytes.NewBuffer(jsonBuf))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error creating OAuth request.")
+	}
+	client := &http.Client{}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Access-Token", TOKEN)
+	resp, err := client.Do(req)
+	body, _ := ioutil.ReadAll(resp.Body)
+	var result map[string]interface{}
+	json.Unmarshal(body, &result)
+	accessToken := result["access_token"].(string)
+	return accessToken
 }
