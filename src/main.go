@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo"
 
@@ -38,6 +39,11 @@ func handleToken(c echo.Context) error {
 		return c.NoContent(http.StatusNotFound)
 	}
 	userTok := RROnline.GetToken(code)
+	cookie := new(http.Cookie)
+	cookie.Name = "user_token"
+	cookie.Value = userTok
+	cookie.Expires = time.Now().Add(24 * time.Hour)
+	c.SetCookie(cookie)
 	jsonBody := &userToken{userTok}
 	return c.JSON(http.StatusOK, jsonBody)
 }
