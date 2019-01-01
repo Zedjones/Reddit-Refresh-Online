@@ -7,7 +7,7 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
   <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
 
-  <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
+  <link rel="stylesheet" type="text/css" media="screen" href="assets/css/index.css" />
 
   <link href="https://fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -23,8 +23,8 @@
           <h4 class="shadow">A Subreddit Scanner</h4>
           <hr>
           <!-- <button class="btn btn-light btn-lg">Get Started</button> -->
-          <a href="gettingStarted.html" class="btn btn-light btn-lg startedBtn">Get Started</a>
-          <a href="https://www.pushbullet.com/authorize?client_id=PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fhandle_token&response_type=code&scope=everything" class="btn btn-light btn-lg loginBtn">{{login}}</a>
+          <a href="http://127.0.0.1:1234/gettingStarted" class="btn btn-light btn-lg startedBtn">Get Started</a>
+          <a href="https://www.pushbullet.com/authorize?client_id=PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1&redirect_uri=http%3A%2F%2Flocalhost%3A1234%2Fhandle_token&response_type=code&scope=everything" class="btn btn-light btn-lg loginBtn">{{ if .Login }} {{ .Login }} {{ else }} Login {{ end }}</a>
         </div>
       </div>
     </div>
