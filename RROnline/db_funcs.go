@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type Device struct {
@@ -25,40 +26,62 @@ type UserInfo struct {
 	Interval float32 `db:"interval_sec"`
 }
 
-const PASSWD_FILE = "password"
-const USER_FILE = "username"
-const CONN_STR = "host='traphouse.us'" +
-	" dbname=reddit_refresh_online" +
-	" user=%s" +
-	" password=%s"
+const PASSWD_FILE = "username"
+const USER_FILE = "password"
+const CONN_STR = "postgres://%s:%s@traphouse.us/reddit_refresh_online"
 
-const SEARCH_QUERY_STR = "SELECT email, sub, search FROM search ORDER BY create_time"
-const SEARCH_DEL_STR = "DELETE FROM search WHERE email = %s"
+const SEARCH_QUERY_STR = "SELECT email, sub, search, last_result " +
+	"FROM search WHERE email = $1 ORDER BY create_time"
+const SEARCH_DEL_STR = "DELETE FROM search WHERE email = $1"
 const SEARCH_INS_STR = "INSERT INTO search (email, sub, search, last_result)" +
-	"	VALUES (%s, %s, %s, %s)"
-const SEARCH_UPD_STR = "UPDATE search SET last_result = %s" +
-	"	WHERE email = %s AND sub = %s AND search = %s"
+	"	VALUES ($1, $2, $3, $4)"
+const SEARCH_UPD_STR = "UPDATE search SET last_result = $1" +
+	"	WHERE email = $2 AND sub = $3 AND search = $4"
 
 const USER_INFO_QUERY_STR = "SELECT email, interval_sec FROM user_info" +
-	"	WHERE email=%s"
+	"	WHERE email = $1"
+const USER_INFO_INS_STR = "INSERT INTO user_info (email, interval_sec)" +
+	"	VALUES ($1, $2)"
+
+const DEVICES_INS_STR = "INSERT INTO device (email, device_id)" +
+	"	VALUES ($1, $2)"
+const DEVICE_DEL_STR = "DELETE FROM device WHERE device_id = $1"
 
 func Connect() *sqlx.DB {
 	username, _ := ioutil.ReadFile(USER_FILE)
 	password, _ := ioutil.ReadFile(PASSWD_FILE)
-	fullConStr := fmt.Sprintf(CONN_STR, username, password)
+	_ = pq.Efatal //weird fix for bug with pq
+	fullConStr := fmt.Sprintf(CONN_STR, string(password), string(username))
 	db, err := sqlx.Open("postgres", fullConStr)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error connecting to PGSQL DB.")
+		fmt.Fprintf(os.Stderr, "Error connecting to PGSQL DB.\n")
 	}
 	return db
+}
+
+func AddDevice(email string, deviceID string) {
+	db := Connect()
+	_, err := db.Exec(DEVICES_INS_STR, email, deviceID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error inserting device %s for %s",
+			deviceID, email)
+	}
+}
+
+func DeleteDevice(deviceID string) {
+	db := Connect()
+	_, err := db.Exec(DEVICE_DEL_STR, deviceID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error deleting device %s", deviceID)
+	}
 }
 
 func GetSearches(email string) []Search {
 	db := Connect()
 	searches := []Search{}
-	err := db.Select(&searches, SEARCH_QUERY_STR)
+	err := db.Select(&searches, SEARCH_QUERY_STR, email)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting searches for %s", email)
+		fmt.Fprintf(os.Stderr, "Error getting searches for %s\n", email)
 	}
 	return searches
 }
@@ -67,7 +90,7 @@ func DeleteSearches(email string) {
 	db := Connect()
 	_, err := db.Exec(SEARCH_DEL_STR, email)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error deleting searches for %s", email)
+		fmt.Fprintf(os.Stderr, "Error deleting searches for %s\n", email)
 	}
 }
 
@@ -75,25 +98,33 @@ func AddSearch(email string, sub string, search string) {
 	db := Connect()
 	_, err := db.Exec(SEARCH_INS_STR, email, sub, search, "")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error inserting search for %s", email)
+		fmt.Fprintf(os.Stderr, "Error inserting search for %s\n", email)
 	}
 }
 
 func GetInterval(email string) float32 {
 	db := Connect()
-	user := UserInfo{}
-	err := db.Select(user, USER_INFO_QUERY_STR, email)
+	users := []UserInfo{}
+	err := db.Select(&users, USER_INFO_QUERY_STR, email)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting interval for %s", email)
+		fmt.Fprintf(os.Stderr, "Error getting interval for %s\n", email)
 	}
-	return user.Interval
+	return users[0].Interval
 }
 
 func UpdateLastRes(email string, sub string, search string, url string) {
 	db := Connect()
 	_, err := db.Exec(SEARCH_UPD_STR, url, email, sub, search)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating (%s, %s, %s) to %s",
+		fmt.Fprintf(os.Stderr, "Error updating (%s, %s, %s) to %s\n",
 			email, sub, search, url)
+	}
+}
+
+func AddUser(email string, interval float32) {
+	db := Connect()
+	_, err := db.Exec(USER_INFO_INS_STR, email, interval)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating user %s\n", email)
 	}
 }
