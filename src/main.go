@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 
 	"../RROnline"
 )
@@ -30,6 +31,7 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 
 func main() {
 	e := echo.New()
+	e.Use(middleware.CSRF())
 	renderer := &TemplateRenderer{
 		templates: template.Must(template.ParseGlob("../templates/*.html")),
 	}
@@ -44,6 +46,7 @@ func main() {
 
 func validateRoute(c echo.Context) error {
 	sub := c.QueryParam("sub")
+	fmt.Printf(sub)
 	if sub == "" {
 		return c.NoContent(http.StatusNotFound)
 	}
@@ -61,10 +64,11 @@ func handleToken(c echo.Context) error {
 	cookie := new(http.Cookie)
 	cookie.Name = "user_token"
 	cookie.Value = userTok
-	cookie.Secure = true
+	//cookie.Secure = true
 	cookie.Expires = time.Now().Add(24 * time.Hour)
+	cookie.HttpOnly = true
 	c.SetCookie(cookie)
-	return c.Redirect(http.StatusOK, "/")
+	return c.Render(http.StatusOK, "mainPage.html", nil)
 }
 
 func index(c echo.Context) error {
@@ -72,7 +76,8 @@ func index(c echo.Context) error {
 	fmt.Println("Rendering index")
 	data := make(map[string]interface{})
 	if err != nil {
-		return c.Render(http.StatusOK, "index.html", struct{ Login string }{"Login"})
+		data["login"] = "Login"
+		return c.Render(http.StatusOK, "index.html", data)
 	}
 	name := RROnline.GetUserName(userToken.Value)
 	data["login"] = name

@@ -24,7 +24,7 @@
           <hr>
           <!-- <button class="btn btn-light btn-lg">Get Started</button> -->
           <a href="http://127.0.0.1:1234/gettingStarted" class="btn btn-light btn-lg startedBtn">Get Started</a>
-          <a href="https://www.pushbullet.com/authorize?client_id=PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1&redirect_uri=http%3A%2F%2Flocalhost%3A1234%2Fhandle_token&response_type=code&scope=everything" class="btn btn-light btn-lg loginBtn">{{ if .Login }} {{ .Login }} {{ else }} Login {{ end }}</a>
+          <a href="https://www.pushbullet.com/authorize?client_id=PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1&redirect_uri=http%3A%2F%2Flocalhost%3A1234%2Fhandle_token&response_type=code&scope=everything" class="btn btn-light btn-lg loginBtn">{{index . "login"}}</a>
         </div>
       </div>
     </div>
