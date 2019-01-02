@@ -1,0 +1,48 @@
+html {
+    font-family: 'Raleway', sans-serif;
+}
+body {
+    height: 100vh;
+    background-color: #b0bec5;
+}
+
+nav {
+    background-color: #efefef;
+    padding: 0 2rem;
+}
+
+nav .brand-logo {
+    color: black;
+}
+
+nav ul a, nav a {
+    color: black;
+}
+
+.main-div {
+    width: 100%;
+    margin: auto;
+}
+
+.center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: 92vh;
+    scroll-snap-type: y mandatory;
+}
+
+.child {
+    padding: 1.5rem;
+    scroll-snap-align: start;
+    background-color: #e2f1f8;
+    width: 100vw;
+    height: 100vh;
+}
+
+.sidenav {
+    background-color: #efefef;
+}
+
