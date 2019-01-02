@@ -32,7 +32,7 @@ const CONN_STR = "host='traphouse.us'" +
 	" user=%s" +
 	" password=%s"
 
-const SEARCH_QUERY_STR = "SELECT email, sub, search FROM search"
+const SEARCH_QUERY_STR = "SELECT email, sub, search FROM search ORDER BY create_time"
 const SEARCH_DEL_STR = "DELETE FROM search WHERE email = %s"
 const SEARCH_INS_STR = "INSERT INTO search (email, sub, search, last_result)" +
 	"	VALUES (%s, %s, %s, %s)"
