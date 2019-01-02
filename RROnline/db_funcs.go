@@ -43,6 +43,10 @@ const USER_INFO_QUERY_STR = "SELECT email, interval_sec FROM user_info" +
 const USER_INFO_INS_STR = "INSERT INTO user_info (email, interval_sec)" +
 	"	VALUES ($1, $2)"
 
+const DEVICES_INS_STR = "INSERT INTO device (email, device_id)" +
+	"	VALUES ($1, $2)"
+const DEVICE_DEL_STR = "DELETE FROM device WHERE device_id = $1"
+
 func Connect() *sqlx.DB {
 	username, _ := ioutil.ReadFile(USER_FILE)
 	password, _ := ioutil.ReadFile(PASSWD_FILE)
@@ -53,6 +57,23 @@ func Connect() *sqlx.DB {
 		fmt.Fprintf(os.Stderr, "Error connecting to PGSQL DB.\n")
 	}
 	return db
+}
+
+func AddDevice(email string, deviceID string) {
+	db := Connect()
+	_, err := db.Exec(DEVICES_INS_STR, email, deviceID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error inserting device %s for %s",
+			deviceID, email)
+	}
+}
+
+func DeleteDevice(deviceID string) {
+	db := Connect()
+	_, err := db.Exec(DEVICE_DEL_STR, deviceID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error deleting device %s", deviceID)
+	}
 }
 
 func GetSearches(email string) []Search {
