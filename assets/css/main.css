@@ -89,3 +89,36 @@ nav ul a, nav a, .btn-floating i {
 .collapsible-header i {
     margin-right: 0;
 }
+
+.input-field {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+input[type=text]:not(.browser-default) {
+    margin-bottom: 14px;
+}
+
+/* label underline focus color */
+.input-field input[type=text]:focus, textarea.materialize-textarea:focus {
+    border-bottom: 1px solid #808e95 !important;
+    box-shadow: 0 1px 0 0 #808e95 !important;
+}
+
+/* label focus color */
+.input-field input[type=text]:focus + label {
+    color: #808e95 !important;
+}
+
+/* label color */
+.input-field label, textarea.materialize-textarea:focus:not([readonly])+label {
+    color: #808e95 !important;
+}
+
+.input-field input[type=text] {
+    border-bottom: 1px solid #808e95 !important;
+}
+
+.hide {
+    display: none;
+}

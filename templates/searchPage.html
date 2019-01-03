@@ -29,6 +29,19 @@
     <li><a href="#">{{index . "name"}}</a></li>
 </ul>
 
+<!-- Modal Structure -->
+<div id="modal1" class="modal no-autoinit modal-fixed-footer">
+    <div class="modal-content">
+    </div>
+    <div class="modal-footer">
+        <a href="#!" class="waves-effect waves-grey btn-flat" id="delete-search">Delete</a>
+        <a href="#!" class="waves-effect waves-grey btn-flat" id="add-search">Add Search</a>
+        <a href="#!" class="waves-effect waves-grey btn-flat" id="remove-search">Remove Search</a>
+        <a href="#!" class="waves-effect waves-grey btn-flat" id="confirm-search">Confirm</a>
+    </div>
+</div>
+
+
 <div class="container div-search">
     <h4>Devices</h4>
 
@@ -41,86 +54,23 @@
         </select>
         <!--<label>Materialize Multiple Select</label>-->
     </div>
-    <div class="fixed-action-btn">
-        <a class="btn-floating btn-large add-btn">
-            <i class="large material-icons">add</i>
-        </a>
-    </div>
     <h4>Searches</h4>
     <div class="row">
         <div class="col s12">
             <ul class="collapsible">
-                <li>
-                    <div class="collapsible-header">gaming
-                        <i class="material-icons right-align">create</i>
-                    </div>
-                    <div class="collapsible-body">
-                        <span>
-                            <table>
-                                <tbody>
-                                  <tr>
-                                    <td>Battlefront</td>
-                                  </tr>
-                                  <tr>
-                                    <td>No Man's Sky</td>
-                                  </tr>
-                                </tbody>
-                            </table>
-                          </span>
-                    </div>
-                </li>
-                <li>
-                    <div class="collapsible-header">sneakers
-                        <i class="material-icons right-align">create</i>
-                    </div>
-                    <div class="collapsible-body">
-                          <span>
-                              <table>
-                                <tbody>
-                                  <tr>
-                                    <td>Jordans</td>
-                                  </tr>
-                                  <tr>
-                                    <td>Yeezys</td>
-                                  </tr>
-                                  <tr>
-                                    <td>Asics</td>
-                                  </tr>
-                                </tbody>
-                            </table>
-                          </span>
-                    </div>
-                </li>
-                <li>
-                    <div class="collapsible-header">
-                        programming
-                        <i class="material-icons right-align">create</i>
-                    </div>
-                    <div class="collapsible-body">
-                          <span>
-                              <table>
-                                <tbody>
-                                  <tr>
-                                    <td>Kotlin</td>
-                                  </tr>
-                                  <tr>
-                                    <td>Rust</td>
-                                  </tr>
-                                  <tr>
-                                    <td>Erlang</td>
-                                  </tr>
-                                </tbody>
-                            </table>
-                          </span>
-                    </div>
-                </li>
             </ul>
         </div>
     </div>
+</div>
 
+<!--Call to action button-->
+<div class="fixed-action-btn no-autoinit">
+    <a class="btn-floating btn-large add-btn">
+        <i class="large material-icons">add</i>
+    </a>
 </div>
 
 
-<script src="assets/js/main.js"></script>
+<script src="main.js"></script>
 </body>
 </html>

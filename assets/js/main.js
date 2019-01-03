@@ -1,2 +1,237 @@
+let modal = null;
+let modalContent = null;
+let searchCount=0;
+// Get Modal instance
+document.addEventListener('DOMContentLoaded', function() {
+    let modalElement = document.querySelectorAll('.modal');
+    var instances = M.Modal.init(modalElement);
+    modalContent = document.querySelector('.modal-content');
+    modal = instances[0];
+});
+
+// dealing with floating button
+document.addEventListener('DOMContentLoaded', function() {
+    var elems = document.querySelectorAll('.fixed-action-btn');
+    var instances = M.FloatingActionButton.init(elems);
+    elems[0].onclick = () => {
+        document.querySelector('#delete-search').classList.add('hide');
+        newSearch();
+        modal.open();
+    }
+});
 // Initialize materialize js components
 M.AutoInit();
+
+document.querySelector('#add-search').onclick = () => {
+    addSeachInput();
+};
+
+document.querySelector('#remove-search').onclick = () => {
+    removeSearchInput();
+};
+
+
+// newSearch pulls up the modal with the content for a new search
+function newSearch() {
+    searchCount = 0;
+    modalContent.innerHTML = `<h4>Subreddit Search</h4>
+        <div class="row" id="subSearchField">
+            <form class="col s12">
+                <div class="row">
+                    <div class="input-field col s12">
+                        <input id="subname" type="text" class="validate">
+                        <label for="subname">Subreddit</label>
+                        <span class="helper-text" data-error="wrong" data-success="right">Success/Fail Goes Here</span>
+                    </div>
+                </div>
+            </form>
+        </div>`;
+    document.querySelector('#confirm-search').onclick = () => {
+        confirmSearch();
+    };
+}
+
+// addSearchInput adds a text field below the sub name
+function addSeachInput() {
+    id = `search${searchCount}`;
+    document.querySelector('#subSearchField').insertAdjacentHTML('beforeend',`
+        <div class="input-field col s12" id="${id}">
+            <input id=${id} type="text" class="search">
+            <label for=${id}>Search</label>
+        </div>`);
+    searchCount++;
+}
+
+// removeSearchInput removes the last search field from the modal
+function removeSearchInput() {
+    // Get element and then remove it
+    let removedInput = document.querySelector(`div#search${searchCount - 1}`);
+    removedInput.remove();
+    searchCount--;
+}
+
+// confirmSearch validates the search, sends it to the server, and adds it to the page
+function confirmSearch() {
+    // Get subname and a list of all the searches
+    const subname = document.getElementById('subname').value.trim().toLowerCase();
+    let inputList = document.getElementsByClassName('search');
+    let searchList=[];
+    for (let i = 0; i < inputList.length; i++) {
+        let searchValue = inputList[i].value.trim();
+        if (searchValue !== "") {
+            searchList.push(inputList[i].value.trim());
+        }
+    }
+    // basic validation
+    if (subname.length === 0) {
+        M.toast({html: 'Please provide a subreddit name.'});
+        return;
+    }
+    if (searchList.length === 0) {
+        M.toast({html: 'Please provide at least one valid search term.'});
+        return;
+    }
+    let obj = {
+        subreddit: subname,
+        searches: searchList,
+    };
+    // Add the contents provided to the page
+    addSearchToPage(subname, searchList);
+    console.log(JSON.stringify(obj));
+    modal.close();
+}
+
+// addSearchToPage formats the search data and adds it to the page
+function addSearchToPage(subname, searchList) {
+    // build output
+    let output = `
+        <li>
+            <div class="collapsible-header">
+                 ${subname}
+                <i class="large material-icons right-align edit-icon">create</i>
+            </div>
+            <div class="collapsible-body">
+            <span>
+                <table>
+                    <tbody>`;
+    searchList.forEach((search) => {
+        output += `
+            <tr>
+                <td>${search}</td>
+            </tr>`
+    });
+    output += `
+                </tbody>
+            </table>
+          </span>
+        </div>
+    </li>
+    `;
+    // Insert adjacent so that html does get rebuilt
+    document.querySelector('.collapsible').insertAdjacentHTML('beforeend', output);
+    // Add event listener to newly created edit icon
+    const icons = document.querySelectorAll('.edit-icon');
+    addEditEventListeners(subname, searchList, icons[icons.length - 1]);
+    searchCount = 0;
+}
+
+// addEditEventListeners adds event listeners to all of the edit buttons
+function addEditEventListeners(subname, searchList, icon) {
+    searchCount = 0;
+    // add event listen to edit button passed in
+    icon.addEventListener('click', (ev) => {
+        // Make it so that click on button does not count as click on parent
+        ev.stopPropagation();
+        // Build output
+        let out = `
+                <h4>Edit Search</h4>
+                <div class="row" id="subSearchField">
+                    <form class="col s12">
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <input disabled id="subname" type="text" class="validate" value="${subname}">
+                                <label for="subname" class="active">Subreddit</label>
+                            </div>
+                        </div>
+                    </form>`;
+        searchList.forEach((search) => {
+            id = `search${searchCount}`;
+            out += `
+                <div class="input-field col s12" id="${id}">
+                    <input id=${id} type="text" class="search" value="${search}">
+                    <label class="active" for=${id}>Search</label>
+                </div>`;
+            searchCount++;
+        });
+        out += `</div>`;
+        // Make sure that the delete button is visible
+        document.querySelector('#delete-search').classList.remove('hide');
+        // Make the delete button remove the
+        document.querySelector('#delete-search').onclick = () => {
+            icon.parentElement.parentElement.remove();
+            modal.close();
+        };
+        // Change logic for the confirm button
+        document.querySelector('#confirm-search').onclick = () => {
+            updateSearch(icon);
+        };
+        // Add html to modal and open it
+        modalContent.innerHTML = out;
+        modal.open();
+    });
+}
+
+// updateSearch updates specific search on the page
+function updateSearch(editButton) {
+    // Get the div that actually holds the content
+    let contentDiv = editButton.parentElement.nextSibling.nextSibling;
+    if (contentDiv === undefined || contentDiv === null) {
+        contentDiv = editButton.parentElement.nextSibling;
+    }
+    // Get subname, only for function call, and the list of searches
+    const subname = document.getElementById('subname').value.trim().toLowerCase();
+    let inputList = document.getElementsByClassName('search');
+    let searchList=[];
+    for (let i = 0; i < inputList.length; i++) {
+        let searchValue = inputList[i].value.trim();
+        if (searchValue !== "") {
+            searchList.push(inputList[i].value.trim());
+        }
+    }
+    // Simple validation on subname and searches
+    if (subname.length === 0) {
+        M.toast({html: 'Please provide a subreddit name.'});
+        return;
+    }
+    if (searchList.length === 0) {
+        M.toast({html: 'Please provide at least one valid search term.'});
+        return;
+    }
+    // let obj = {
+    //     subreddit: subname,
+    //     searches: searchList,
+    // };
+
+    // Build output for page
+    let output = `
+            <span>
+                <table>
+                    <tbody>`;
+    searchList.forEach((search) => {
+        output += `
+            <tr>
+                <td>${search}</td>
+            </tr>`
+    });
+    output += `
+                </tbody>
+            </table>
+          </span>
+    `;
+    // Put output on page
+    contentDiv.innerHTML = output;
+    // re-add eventlistener to update button to reflect changes
+    addEditEventListeners(subname, searchList, editButton);
+    searchCount = 0;
+    modal.close();
+}
