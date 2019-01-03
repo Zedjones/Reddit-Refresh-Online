@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/labstack/echo"
@@ -29,6 +30,10 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
+const PUSH_URL = "https://www.pushbullet.com/authorize?client_id=" +
+	"PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1&redirect_uri=http%3A%2F%2F" +
+	"localhost%3A1234%2Fhandle_token&response_type=code&scope=everything"
+
 func main() {
 	e := echo.New()
 	e.Use(middleware.CSRF())
@@ -41,6 +46,7 @@ func main() {
 	e.GET("/handle_token", handleToken)
 	e.GET("/", index)
 	e.GET("/gettingStarted", gettingStarted)
+	e.GET("/searchPage", mainPage)
 	e.Start(":1234")
 }
 
@@ -62,8 +68,8 @@ func handleToken(c echo.Context) error {
 	userTok := RROnline.GetToken(code)
 	_, err := c.Cookie("user_token")
 	if err != nil {
-		if err.Error() == "http: name cookie not present" {
-			return c.Render(http.StatusOK, "mainPage.html", nil)
+		if err.Error() != "http: name cookie not present" {
+			fmt.Fprintf(os.Stderr, "Error getting cookie user_token.")
 		}
 	}
 	cookie := new(http.Cookie)
@@ -77,22 +83,34 @@ func handleToken(c echo.Context) error {
 	if !RROnline.UserExists(email) {
 		RROnline.AddUser(email, RROnline.DEFAULT_INTERVAL)
 	}
-	return c.Redirect(http.StatusTemporaryRedirect, "/gettingStarted")
+	return c.Redirect(http.StatusFound, "/searchPage")
 }
 
 func index(c echo.Context) error {
 	userToken, err := c.Cookie("user_token")
-	fmt.Println("Rendering index")
 	data := make(map[string]interface{})
 	if err != nil {
 		data["login"] = "Login"
+		data["url"] = PUSH_URL
 		return c.Render(http.StatusOK, "index.html", data)
 	}
 	name := RROnline.GetUserName(userToken.Value)
 	data["login"] = name
+	data["url"] = "/searchPage"
 	return c.Render(http.StatusOK, "index.html", data)
 }
 
 func gettingStarted(c echo.Context) error {
 	return c.Render(http.StatusOK, "gettingStarted.html", nil)
+}
+
+func mainPage(c echo.Context) error {
+	userToken, err := c.Cookie("user_token")
+	if err != nil {
+		return c.Redirect(http.StatusFound, "/")
+	}
+	name := RROnline.GetUserName(userToken.Value)
+	data := make(map[string]interface{})
+	data["name"] = name
+	return c.Render(http.StatusOK, "searchPage.html", data)
 }
