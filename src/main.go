@@ -59,8 +59,13 @@ func handleToken(c echo.Context) error {
 	if code == "" {
 		return c.NoContent(http.StatusNotFound)
 	}
-	fmt.Println(code)
 	userTok := RROnline.GetToken(code)
+	_, err := c.Cookie("user_token")
+	if err != nil {
+		if err.Error() == "http: name cookie not present" {
+			return c.Render(http.StatusOK, "mainPage.html", nil)
+		}
+	}
 	cookie := new(http.Cookie)
 	cookie.Name = "user_token"
 	cookie.Value = userTok
@@ -68,6 +73,10 @@ func handleToken(c echo.Context) error {
 	cookie.Expires = time.Now().Add(24 * time.Hour)
 	cookie.HttpOnly = true
 	c.SetCookie(cookie)
+	email := RROnline.GetEmail(userTok)
+	if !RROnline.UserExists(email) {
+		RROnline.AddUser(email, RROnline.DEFAULT_INTERVAL)
+	}
 	return c.Render(http.StatusOK, "mainPage.html", nil)
 }
 

@@ -30,6 +30,8 @@ const PASSWD_FILE = "username"
 const USER_FILE = "password"
 const CONN_STR = "postgres://%s:%s@traphouse.us/reddit_refresh_online"
 
+const DEFAULT_INTERVAL = 600
+
 const SEARCH_QUERY_STR = "SELECT email, sub, search, last_result " +
 	"FROM search WHERE email = $1 ORDER BY create_time"
 const SEARCH_DEL_STR = "DELETE FROM search WHERE email = $1"
@@ -100,6 +102,16 @@ func AddSearch(email string, sub string, search string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error inserting search for %s\n", email)
 	}
+}
+
+func UserExists(email string) bool {
+	db := Connect()
+	users := []UserInfo{}
+	err := db.Select(&users, USER_INFO_QUERY_STR, email)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting interval for %s\n", email)
+	}
+	return len(users) != 0
 }
 
 func GetInterval(email string) float32 {
