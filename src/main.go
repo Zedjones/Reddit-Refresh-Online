@@ -77,7 +77,7 @@ func handleToken(c echo.Context) error {
 	if !RROnline.UserExists(email) {
 		RROnline.AddUser(email, RROnline.DEFAULT_INTERVAL)
 	}
-	return c.Render(http.StatusOK, "mainPage.html", nil)
+	return c.Redirect(http.StatusTemporaryRedirect, "/gettingStarted")
 }
 
 func index(c echo.Context) error {

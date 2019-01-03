@@ -1,41 +1,91 @@
+html {
+    font-family: 'Raleway', sans-serif;
+}
 body {
-  background-color: #faf2f2;
-  font-family: 'Roboto', sans-serif;
+    height: 100vh;
+    background-color: #b0bec5;
 }
 
 nav {
-  padding-left: 5%;
-  padding-right: 5%;
-  margin: 0 9%;
-  box-shadow: 0 2px 4px -1px rgba(0,0,0,0.25);
+    background-color: #efefef;
+    padding: 0 2rem;
 }
 
-html, body {
-  height: 100%;
+nav .brand-logo {
+    color: black;
 }
 
-.indented {
-  margin: 0 9%;
-  background: rgb(255, 255, 255);
-  min-height: 100%;
-  padding: 1% 1%;
+nav ul a, nav a, .btn-floating i {
+    color: black;
 }
 
-.instruction {
-  font-size: .5em;
+.main-div {
+    width: 100%;
+    margin: auto;
 }
 
-.card {
-  float: left;
-  margin: 0 2% 2% 2%;
-  width: 29%;
+.center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: 92vh;
+    scroll-snap-type: y mandatory;
 }
 
-#searchButton {
-  display: inline;
+.child {
+    padding: 1.5rem;
+    scroll-snap-align: start;
+    background-color: #e2f1f8;
+    width: 100vw;
+    height: 100vh;
 }
 
+.sidenav {
+    background-color: #efefef;
+}
 
+.div-search {
+    padding: .2rem 1.3rem;
+    background-color: #efefef;
+    min-height: 60vh;
+    margin-top: 1.5rem;
+}
 
+.add-btn {
+    background-color: #b4b4b4;
+    color: black;
+}
 
+.add-btn:hover {
+    background-color: #efefef;
+}
 
+[type="checkbox"]:checked+span:not(.lever):before {
+    border-right: 2px solid #808e95 !important;
+    border-bottom: 2px solid #808e95 !important;
+}
+
+[type="checkbox"]+span:not(.lever):before, [type="checkbox"]:not(.filled-in)+span:not(.lever):after {
+    border: 2px solid #b4b4b4;
+}
+
+.select-wrapper input.select-dropdown:focus {
+    border-bottom: 1px solid #808e95;
+}
+
+.collection.with-header .collection-header, .collection .collection-item {
+    background-color: #ffffff;
+}
+
+.right-align {
+    /*position: fixed;*/
+    /*right: 12%;*/
+    margin-left: auto;
+    margin-right: 5px;
+}
+
+.collapsible-header i {
+    margin-right: 0;
+}
