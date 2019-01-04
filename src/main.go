@@ -46,7 +46,7 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 
 func main() {
 	e := echo.New()
-	//e.Use(middleware.CSRF())
+	e.Use(middleware.CSRF())
 	e.Use(middleware.Logger())
 	renderer := &TemplateRenderer{
 		templates: template.Must(template.ParseGlob("../templates/*.html")),
