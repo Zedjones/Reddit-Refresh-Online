@@ -1,6 +1,7 @@
 package RROnline
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -35,10 +36,13 @@ const DEFAULT_INTERVAL = 600
 const SEARCH_QUERY_STR = "SELECT email, sub, search, last_result " +
 	"FROM search WHERE email = $1 ORDER BY create_time"
 const SEARCH_DEL_STR = "DELETE FROM search WHERE email = $1"
+const SEARCH_DEL_ONE_STR = "DELETE FROM search " +
+	"WHERE email = $1 AND sub = $2 AND search = $3"
 const SEARCH_INS_STR = "INSERT INTO search (email, sub, search, last_result)" +
 	"	VALUES ($1, $2, $3, $4)"
 const SEARCH_UPD_STR = "UPDATE search SET last_result = $1" +
 	"	WHERE email = $2 AND sub = $3 AND search = $4"
+const DUP_SEARCH_ERR = "pq: duplicate key value violates unique constraint \"search_pk\""
 
 const USER_INFO_QUERY_STR = "SELECT email, interval_sec FROM user_info" +
 	"	WHERE email = $1"
@@ -96,12 +100,27 @@ func DeleteSearches(email string) {
 	}
 }
 
+func DeleteSearch(email string, sub string, search string) error {
+	db := Connect()
+	_, err := db.Exec(SEARCH_DEL_ONE_STR, email, sub, search)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error deleting search (%s, %s, %s)\n",
+			email, search, sub)
+		return errors.New("Could not delete search")
+	}
+	return nil
+}
+
 func AddSearch(email string, sub string, search string) {
 	db := Connect()
 	_, err := db.Exec(SEARCH_INS_STR, email, sub, search, "")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error inserting search for %s\n", email)
+		if err.Error() != DUP_SEARCH_ERR {
+			fmt.Fprintf(os.Stderr, "Error inserting search for %s\n", email)
+			fmt.Println(err)
+		}
 	}
+	//TODO: add code to start a search thread
 }
 
 func UserExists(email string) bool {

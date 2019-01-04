@@ -14,6 +14,10 @@ import (
 	"../RROnline"
 )
 
+const PUSH_URL = "https://www.pushbullet.com/authorize?client_id=" +
+	"PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1&redirect_uri=http%3A%2F%2F" +
+	"localhost%3A1234%2Fhandle_token&response_type=code&scope=everything"
+
 type isValid struct {
 	IsValid bool `json:"is_valid"`
 }
@@ -26,17 +30,24 @@ type TemplateRenderer struct {
 	templates *template.Template
 }
 
+type Searches struct {
+	Sub      string   `json:"subreddit"`
+	Searches []string `json:"searches"`
+}
+
+type Search struct {
+	Sub    string `json:"subreddit"`
+	Search string `json:"search"`
+}
+
 func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
-const PUSH_URL = "https://www.pushbullet.com/authorize?client_id=" +
-	"PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1&redirect_uri=http%3A%2F%2F" +
-	"localhost%3A1234%2Fhandle_token&response_type=code&scope=everything"
-
 func main() {
 	e := echo.New()
-	e.Use(middleware.CSRF())
+	//e.Use(middleware.CSRF())
+	e.Use(middleware.Logger())
 	renderer := &TemplateRenderer{
 		templates: template.Must(template.ParseGlob("../templates/*.html")),
 	}
@@ -47,6 +58,8 @@ func main() {
 	e.GET("/", index)
 	e.GET("/gettingStarted", gettingStarted)
 	e.GET("/searchPage", mainPage)
+	e.POST("/addSearch", addSearch)
+	e.POST("/deleteSearch", deleteSearch)
 	e.Start(":1234")
 }
 
@@ -113,4 +126,37 @@ func mainPage(c echo.Context) error {
 	data := make(map[string]interface{})
 	data["name"] = name
 	return c.Render(http.StatusOK, "searchPage.html", data)
+}
+
+func addSearch(c echo.Context) error {
+	searches := new(Searches)
+	if err := c.Bind(searches); err != nil {
+		fmt.Fprintln(os.Stderr, "Error binding JSON body to searches.")
+	}
+	userToken, err := c.Cookie("user_token")
+	if err != nil {
+		return c.Redirect(http.StatusFound, "/")
+	}
+	email := RROnline.GetEmail(userToken.Value)
+	for _, search := range searches.Searches {
+		RROnline.AddSearch(email, searches.Sub, search)
+	}
+	return nil
+}
+
+func deleteSearch(c echo.Context) error {
+	search := new(Search)
+	if err := c.Bind(search); err != nil {
+		fmt.Fprintf(os.Stderr, "Error binding JSON body to search.")
+	}
+	userToken, err := c.Cookie("user_token")
+	if err != nil {
+		return c.Redirect(http.StatusFound, "/")
+	}
+	email := RROnline.GetEmail(userToken.Value)
+	err = RROnline.DeleteSearch(email, search.Sub, search.Search)
+	if err != nil {
+		//TODO: handle error here
+	}
+	return nil
 }
