@@ -123,8 +123,19 @@ func mainPage(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/")
 	}
 	name := RROnline.GetUserName(userToken.Value)
+	email := RROnline.GetEmail(userToken.Value)
+	searches := RROnline.GetSearches(email)
+	searchMap := make(map[string][]string)
+	for _, search := range searches {
+		if _, ok := searchMap[search.Sub]; ok {
+			searchMap[search.Sub] = append(searchMap[search.Sub], search.Search)
+		} else {
+			searchMap[search.Sub] = []string{search.Search}
+		}
+	}
 	data := make(map[string]interface{})
 	data["name"] = name
+	data["searches"] = searchMap
 	return c.Render(http.StatusOK, "searchPage.html", data)
 }
 

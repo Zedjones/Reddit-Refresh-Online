@@ -70,7 +70,13 @@
     </a>
 </div>
 
-
 <script src="assets/js/main.js"></script>
+
+<script>
+    {{range $sub, $searches := index . "searches"}}
+        addSearchToPage({{$sub}}, {{$searches}})
+    {{end}}
+</script>
+
 </body>
 </html>

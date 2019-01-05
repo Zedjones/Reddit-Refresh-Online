@@ -30,6 +30,15 @@ document.querySelector('#remove-search').onclick = () => {
     removeSearchInput();
 };
 
+function getCookie(name){
+    var pattern = RegExp(name + "=.[^;]*")
+    matched = document.cookie.match(pattern)
+    if(matched){
+        var cookie = matched[0].split('=')
+        return cookie[1]
+    }
+    return false
+}
 
 // newSearch pulls up the modal with the content for a new search
 function newSearch() {
@@ -97,6 +106,13 @@ function confirmSearch() {
     };
     // Add the contents provided to the page
     addSearchToPage(subname, searchList);
+    csrfToken = getCookie("_csrf");
+    var req = new XMLHttpRequest();
+    postUrl = "http://localhost:1234/addSearch";
+    req.open("POST", postUrl, true);
+    req.setRequestHeader('X-CSRF-Token', csrfToken)
+    req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+    req.send(JSON.stringify(obj));
     console.log(JSON.stringify(obj));
     modal.close();
 }
