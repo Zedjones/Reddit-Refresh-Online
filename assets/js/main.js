@@ -110,7 +110,7 @@ function confirmSearch() {
     var req = new XMLHttpRequest();
     postUrl = "http://localhost:1234/addSearch";
     req.open("POST", postUrl, true);
-    req.setRequestHeader('X-CSRF-Token', csrfToken)
+    req.setRequestHeader('X-CSRF-Token', csrfToken);
     req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
     req.send(JSON.stringify(obj));
     console.log(JSON.stringify(obj));
@@ -191,10 +191,9 @@ function addEditEventListeners(subname, searchList, icon) {
             var req = new XMLHttpRequest();
             postUrl = "http://localhost:1234/deleteSub";
             req.open("POST", postUrl, true);
-            req.setRequestHeader('X-CSRF-Token', csrfToken)
+            req.setRequestHeader('X-CSRF-Token', csrfToken);
             req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
             req.send(JSON.stringify(obj));
-            console.log(JSON.stringify(obj))
             icon.parentElement.parentElement.remove();
             modal.close();
         };
@@ -267,7 +266,7 @@ function updateSearch(editButton) {
     var req = new XMLHttpRequest();
     postUrl = "http://localhost:1234/addSearch";
     req.open("POST", postUrl, true);
-    req.setRequestHeader('X-CSRF-Token', csrfToken)
+    req.setRequestHeader('X-CSRF-Token', csrfToken);
     req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
     req.send(JSON.stringify(obj));
     console.log(JSON.stringify(obj));
