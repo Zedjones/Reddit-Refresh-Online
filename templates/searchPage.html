@@ -48,9 +48,15 @@
     <div class="input-field col s12">
         <select multiple>
             <!--<option value="" disabled selected>Choose your option</option>-->
-            <option value="1" selected>Chromebook</option>
-            <option value="2">Pixel 3</option>
-            <option value="3">IPad Pro</option>
+            {{$inc := index . "inc"}}
+            {{range $ind, $val := index . "devices"}}
+                {{$ind = call $inc $ind}}
+                {{if eq $ind 1}}
+                    <option value="{{call $inc $ind}}" selected>{{$val}}</option>
+                {{else}}
+                    <option value="{{call $inc $ind}}">{{$val}}</option>
+                {{end}}
+            {{end}}
         </select>
         <!--<label>Materialize Multiple Select</label>-->
     </div>

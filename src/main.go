@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"../RROnline"
+	"../Reddit-Refresh-Go/reddit_refresh_go/reddit_refresh"
 )
 
 const PUSH_URL = "https://www.pushbullet.com/authorize?client_id=" +
@@ -137,9 +138,18 @@ func mainPage(c echo.Context) error {
 			searchMap[search.Sub] = []string{search.Search}
 		}
 	}
+	devicesMap := reddit_refresh.GetDevices(userToken.Value)
+	devices := []string{}
+	for nick := range devicesMap {
+		devices = append(devices, nick)
+	}
 	data := make(map[string]interface{})
 	data["name"] = name
 	data["searches"] = searchMap
+	data["devices"] = devices
+	data["inc"] = func(i int) int {
+		return i + 1
+	}
 	return c.Render(http.StatusOK, "searchPage.html", data)
 }
 
