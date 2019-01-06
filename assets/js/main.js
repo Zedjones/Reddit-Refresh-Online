@@ -248,6 +248,18 @@ function updateSearch(editButton) {
     contentDiv.innerHTML = output;
     // re-add eventlistener to update button to reflect changes
     addEditEventListeners(subname, searchList, editButton);
+    let obj = {
+        subreddit: subname,
+        searches: searchList,
+    };
+    csrfToken = getCookie("_csrf");
+    var req = new XMLHttpRequest();
+    postUrl = "http://localhost:1234/addSearch";
+    req.open("POST", postUrl, true);
+    req.setRequestHeader('X-CSRF-Token', csrfToken)
+    req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+    req.send(JSON.stringify(obj));
+    console.log(JSON.stringify(obj));
     searchCount = 0;
     modal.close();
 }

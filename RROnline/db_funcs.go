@@ -35,7 +35,8 @@ const DEFAULT_INTERVAL = 600
 
 const SEARCH_QUERY_STR = "SELECT email, sub, search, last_result " +
 	"FROM search WHERE email = $1 ORDER BY create_time"
-const SEARCH_DEL_STR = "DELETE FROM search WHERE email = $1"
+const SEARCH_DEL_STR = "DELETE FROM search " +
+	"WHERE email = ? AND sub = ? AND search NOT IN (?)"
 const SEARCH_DEL_ONE_STR = "DELETE FROM search " +
 	"WHERE email = $1 AND sub = $2 AND search = $3"
 const SEARCH_INS_STR = "INSERT INTO search (email, sub, search, last_result)" +
@@ -92,12 +93,18 @@ func GetSearches(email string) []Search {
 	return searches
 }
 
-func DeleteSearches(email string) {
+func DeleteMissingSearches(email string, sub string, searches []string) error {
 	db := Connect()
-	_, err := db.Exec(SEARCH_DEL_STR, email)
+	query, args, err := sqlx.In(SEARCH_DEL_STR, email, sub, searches)
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	_, err = db.Exec(query, args...)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error deleting searches for %s\n", email)
+		fmt.Fprintf(os.Stderr, "Error deleting old searches for (%s, %s)\n",
+			email, sub)
+		fmt.Println(err)
+		return errors.New("Could not delete old searches")
 	}
+	return nil
 }
 
 func DeleteSearch(email string, sub string, search string) error {

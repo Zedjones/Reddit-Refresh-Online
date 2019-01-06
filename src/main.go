@@ -152,6 +152,7 @@ func addSearch(c echo.Context) error {
 	for _, search := range searches.Searches {
 		RROnline.AddSearch(email, searches.Sub, search)
 	}
+	RROnline.DeleteMissingSearches(email, searches.Sub, searches.Searches)
 	return nil
 }
 
