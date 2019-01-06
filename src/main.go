@@ -40,6 +40,10 @@ type Search struct {
 	Search string `json:"search"`
 }
 
+type Sub struct {
+	Sub string `json:"subreddit"`
+}
+
 func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
 	return t.templates.ExecuteTemplate(w, name, data)
 }
@@ -59,7 +63,7 @@ func main() {
 	e.GET("/gettingStarted", gettingStarted)
 	e.GET("/searchPage", mainPage)
 	e.POST("/addSearch", addSearch)
-	e.POST("/deleteSearch", deleteSearch)
+	e.POST("/deleteSub", deleteSub)
 	e.Start(":1234")
 }
 
@@ -156,9 +160,9 @@ func addSearch(c echo.Context) error {
 	return nil
 }
 
-func deleteSearch(c echo.Context) error {
-	search := new(Search)
-	if err := c.Bind(search); err != nil {
+func deleteSub(c echo.Context) error {
+	sub := new(Sub)
+	if err := c.Bind(sub); err != nil {
 		fmt.Fprintf(os.Stderr, "Error binding JSON body to search.")
 	}
 	userToken, err := c.Cookie("user_token")
@@ -166,7 +170,7 @@ func deleteSearch(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/")
 	}
 	email := RROnline.GetEmail(userToken.Value)
-	err = RROnline.DeleteSearch(email, search.Sub, search.Search)
+	err = RROnline.DeleteSub(email, sub.Sub)
 	if err != nil {
 		//TODO: handle error here
 	}

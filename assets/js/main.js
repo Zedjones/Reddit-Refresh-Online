@@ -184,6 +184,17 @@ function addEditEventListeners(subname, searchList, icon) {
         document.querySelector('#delete-search').classList.remove('hide');
         // Make the delete button remove the
         document.querySelector('#delete-search').onclick = () => {
+            let obj = {
+                subreddit: subname
+            };
+            csrfToken = getCookie("_csrf");
+            var req = new XMLHttpRequest();
+            postUrl = "http://localhost:1234/deleteSub";
+            req.open("POST", postUrl, true);
+            req.setRequestHeader('X-CSRF-Token', csrfToken)
+            req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+            req.send(JSON.stringify(obj));
+            console.log(JSON.stringify(obj))
             icon.parentElement.parentElement.remove();
             modal.close();
         };

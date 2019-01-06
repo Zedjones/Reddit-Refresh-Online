@@ -37,8 +37,8 @@ const SEARCH_QUERY_STR = "SELECT email, sub, search, last_result " +
 	"FROM search WHERE email = $1 ORDER BY create_time"
 const SEARCH_DEL_STR = "DELETE FROM search " +
 	"WHERE email = ? AND sub = ? AND search NOT IN (?)"
-const SEARCH_DEL_ONE_STR = "DELETE FROM search " +
-	"WHERE email = $1 AND sub = $2 AND search = $3"
+const SEARCH_DEL_SUB_STR = "DELETE FROM search " +
+	"WHERE email = $1 AND sub = $2"
 const SEARCH_INS_STR = "INSERT INTO search (email, sub, search, last_result)" +
 	"	VALUES ($1, $2, $3, $4)"
 const SEARCH_UPD_STR = "UPDATE search SET last_result = $1" +
@@ -107,13 +107,13 @@ func DeleteMissingSearches(email string, sub string, searches []string) error {
 	return nil
 }
 
-func DeleteSearch(email string, sub string, search string) error {
+func DeleteSub(email string, sub string) error {
 	db := Connect()
-	_, err := db.Exec(SEARCH_DEL_ONE_STR, email, sub, search)
+	_, err := db.Exec(SEARCH_DEL_SUB_STR, email, sub)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error deleting search (%s, %s, %s)\n",
-			email, search, sub)
-		return errors.New("Could not delete search")
+		fmt.Fprintf(os.Stderr, "Error deleting sub (%s, %s)\n",
+			email, sub)
+		return errors.New("Could not delete sub")
 	}
 	return nil
 }
