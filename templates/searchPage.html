@@ -51,10 +51,10 @@
             {{$inc := index . "inc"}}
             {{range $ind, $val := index . "devices"}}
                 {{$ind = call $inc $ind}}
-                {{if eq $ind 1}}
-                    <option value="{{call $inc $ind}}" selected>{{$val}}</option>
+                {{if eq $val.Active true}}
+                    <option value="{{call $inc $ind}}" selected>{{$val.Nickname}}</option>
                 {{else}}
-                    <option value="{{call $inc $ind}}">{{$val}}</option>
+                    <option value="{{call $inc $ind}}">{{$val.Nickname}}</option>
                 {{end}}
             {{end}}
         </select>

@@ -95,12 +95,12 @@ func GetToken(token string) string {
 	dataMap["code"] = token
 	jsonBuf, err := json.Marshal(dataMap)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error converting data map in JSON string.")
+		fmt.Fprintln(os.Stderr, "Error converting data map in JSON string.\n")
 		return ""
 	}
 	req, err := http.NewRequest("POST", OAUTH_URL, bytes.NewBuffer(jsonBuf))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error creating OAuth request.")
+		fmt.Fprintln(os.Stderr, "Error creating OAuth request.\n")
 		return ""
 	}
 	client := &http.Client{}

@@ -8,11 +8,15 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+
+	"../Reddit-Refresh-Go/reddit_refresh_go/reddit_refresh"
 )
 
 type Device struct {
 	Email    string `db:"email"`
 	DeviceId string `db:"device_id"`
+	Nickname string `db:"nickname"`
+	Active   bool   `db:"active"`
 }
 
 type Search struct {
@@ -50,9 +54,12 @@ const USER_INFO_QUERY_STR = "SELECT email, interval_sec FROM user_info" +
 const USER_INFO_INS_STR = "INSERT INTO user_info (email, interval_sec)" +
 	"	VALUES ($1, $2)"
 
-const DEVICES_INS_STR = "INSERT INTO device (email, device_id)" +
-	"	VALUES ($1, $2)"
+const DEVICES_INS_STR = "INSERT INTO device (email, device_id, nickname)" +
+	"	VALUES ($1, $2, $3)"
+const DEVICES_QUERY_STR = "SELECT email, device_id, nickname, active" +
+	"	FROM device WHERE email = $1"
 const DEVICE_DEL_STR = "DELETE FROM device WHERE device_id = $1"
+const DEVICE_DEL_ALL_STR = "DELETE FROM device WHERE email = $1"
 
 func Connect() *sqlx.DB {
 	username, _ := ioutil.ReadFile(USER_FILE)
@@ -66,12 +73,37 @@ func Connect() *sqlx.DB {
 	return db
 }
 
-func AddDevice(email string, deviceID string) {
+func RefreshDevices(token string) map[string]string {
 	db := Connect()
-	_, err := db.Exec(DEVICES_INS_STR, email, deviceID)
+	email := GetEmail(token)
+	devices := reddit_refresh.GetDevices(token)
+	_, err := db.Exec(DEVICE_DEL_ALL_STR, email)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error inserting device %s for %s",
+		fmt.Fprintf(os.Stderr, "Error deleting devices for %s", email)
+	}
+	for nickname, iden := range devices {
+		AddDevice(email, iden, nickname)
+	}
+	return devices
+}
+
+func GetDevices(email string) []Device {
+	db := Connect()
+	devices := []Device{}
+	err := db.Select(&devices, DEVICES_QUERY_STR, email)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting devices for %s\n", email)
+	}
+	return devices
+}
+
+func AddDevice(email string, deviceID string, nickname string) {
+	db := Connect()
+	_, err := db.Exec(DEVICES_INS_STR, email, deviceID, nickname)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error inserting device %s for %s\n",
 			deviceID, email)
+		fmt.Println(err)
 	}
 }
 
@@ -79,7 +111,7 @@ func DeleteDevice(deviceID string) {
 	db := Connect()
 	_, err := db.Exec(DEVICE_DEL_STR, deviceID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error deleting device %s", deviceID)
+		fmt.Fprintf(os.Stderr, "Error deleting device %s\n", deviceID)
 	}
 }
 

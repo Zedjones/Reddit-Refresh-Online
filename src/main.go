@@ -12,7 +12,6 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"../RROnline"
-	"../Reddit-Refresh-Go/reddit_refresh_go/reddit_refresh"
 )
 
 const PUSH_URL = "https://www.pushbullet.com/authorize?client_id=" +
@@ -86,8 +85,9 @@ func handleToken(c echo.Context) error {
 	userTok := RROnline.GetToken(code)
 	_, err := c.Cookie("user_token")
 	if err != nil {
-		if err.Error() != "http: name cookie not present" {
-			fmt.Fprintf(os.Stderr, "Error getting cookie user_token.")
+		if err.Error() != "http: named cookie not present" {
+			fmt.Fprintf(os.Stderr, "Error getting cookie user_token.\n")
+			fmt.Println(err)
 		}
 	}
 	cookie := new(http.Cookie)
@@ -100,6 +100,7 @@ func handleToken(c echo.Context) error {
 	email := RROnline.GetEmail(userTok)
 	if !RROnline.UserExists(email) {
 		RROnline.AddUser(email, RROnline.DEFAULT_INTERVAL)
+		RROnline.RefreshDevices(userTok)
 	}
 	return c.Redirect(http.StatusFound, "/searchPage")
 }
@@ -138,11 +139,8 @@ func mainPage(c echo.Context) error {
 			searchMap[search.Sub] = []string{search.Search}
 		}
 	}
-	devicesMap := reddit_refresh.GetDevices(userToken.Value)
-	devices := []string{}
-	for nick := range devicesMap {
-		devices = append(devices, nick)
-	}
+	devices := RROnline.GetDevices(email)
+	fmt.Println(devices)
 	data := make(map[string]interface{})
 	data["name"] = name
 	data["searches"] = searchMap
@@ -156,7 +154,7 @@ func mainPage(c echo.Context) error {
 func addSearch(c echo.Context) error {
 	searches := new(Searches)
 	if err := c.Bind(searches); err != nil {
-		fmt.Fprintln(os.Stderr, "Error binding JSON body to searches.")
+		fmt.Fprintln(os.Stderr, "Error binding JSON body to searches.\n")
 	}
 	userToken, err := c.Cookie("user_token")
 	if err != nil {
@@ -173,7 +171,7 @@ func addSearch(c echo.Context) error {
 func deleteSub(c echo.Context) error {
 	sub := new(Sub)
 	if err := c.Bind(sub); err != nil {
-		fmt.Fprintf(os.Stderr, "Error binding JSON body to search.")
+		fmt.Fprintf(os.Stderr, "Error binding JSON body to search.\n")
 	}
 	userToken, err := c.Cookie("user_token")
 	if err != nil {
