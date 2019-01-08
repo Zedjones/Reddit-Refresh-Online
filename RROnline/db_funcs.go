@@ -39,6 +39,8 @@ const DEFAULT_INTERVAL = 600
 
 const SEARCH_QUERY_STR = "SELECT email, sub, search, last_result " +
 	"FROM search WHERE email = $1 ORDER BY create_time"
+const SEARCH_IND_QUERY_STR = "SELECT email, sub, search, last_result " +
+	"FROM search WHERE email = $1 and sub = $2 and search = $3"
 const SEARCH_DEL_STR = "DELETE FROM search " +
 	"WHERE email = ? AND sub = ? AND search NOT IN (?)"
 const SEARCH_DEL_SUB_STR = "DELETE FROM search " +
@@ -123,6 +125,17 @@ func GetSearches(email string) []Search {
 		fmt.Fprintf(os.Stderr, "Error getting searches for %s\n", email)
 	}
 	return searches
+}
+
+func GetLastRes(email string, sub string, search string) string {
+	db := Connect()
+	searches := []Search{}
+	err := db.Select(&searches, SEARCH_IND_QUERY_STR, email, sub, search)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, fmt.Sprintf("Error getting search (%s, %s, %s)",
+			email, sub, search))
+	}
+	return searches[0].LastResult
 }
 
 func DeleteMissingSearches(email string, sub string, searches []string) error {
