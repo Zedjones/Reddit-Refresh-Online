@@ -99,8 +99,9 @@ func handleToken(c echo.Context) error {
 	c.SetCookie(cookie)
 	email := RROnline.GetEmail(userTok)
 	if !RROnline.UserExists(email) {
-		RROnline.AddUser(email, RROnline.DEFAULT_INTERVAL)
-		RROnline.RefreshDevices(userTok)
+		db := RROnline.Connect()
+		RROnline.AddUser(email, RROnline.DEFAULT_INTERVAL, db)
+		RROnline.RefreshDevices(userTok, db)
 	}
 	return c.Redirect(http.StatusFound, "/searchPage")
 }
@@ -130,7 +131,8 @@ func mainPage(c echo.Context) error {
 	}
 	name := RROnline.GetUserName(userToken.Value)
 	email := RROnline.GetEmail(userToken.Value)
-	searches := RROnline.GetSearches(email)
+	db := RROnline.Connect()
+	searches := RROnline.GetSearches(email, db)
 	searchMap := make(map[string][]string)
 	for _, search := range searches {
 		if _, ok := searchMap[search.Sub]; ok {
@@ -139,7 +141,7 @@ func mainPage(c echo.Context) error {
 			searchMap[search.Sub] = []string{search.Search}
 		}
 	}
-	devices := RROnline.GetDevices(email)
+	devices := RROnline.GetDevices(email, db)
 	fmt.Println(devices)
 	data := make(map[string]interface{})
 	data["name"] = name

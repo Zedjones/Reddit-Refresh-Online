@@ -120,7 +120,7 @@ func CheckResult(token string, email string, sub string, search string) {
 	newResult := reddit_refresh.GetResult(sub, search)
 	oldResult := GetLastRes(email, sub, search)
 	if oldResult != newResult.Url {
-		devices := GetDevices(email)
+		devices := GetDevices(email, nil)
 		for _, device := range devices {
 			reddit_refresh.SendPushLink(device.DeviceId, token, newResult)
 			UpdateLastRes(email, sub, search, newResult.Url)

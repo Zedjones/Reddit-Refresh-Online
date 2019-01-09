@@ -75,8 +75,10 @@ func Connect() *sqlx.DB {
 	return db
 }
 
-func RefreshDevices(token string) map[string]string {
-	db := Connect()
+func RefreshDevices(token string, db *sqlx.DB) map[string]string {
+	if db == nil {
+		db = Connect()
+	}
 	email := GetEmail(token)
 	devices := reddit_refresh.GetDevices(token)
 	_, err := db.Exec(DEVICE_DEL_ALL_STR, email)
@@ -84,13 +86,15 @@ func RefreshDevices(token string) map[string]string {
 		fmt.Fprintf(os.Stderr, "Error deleting devices for %s", email)
 	}
 	for nickname, iden := range devices {
-		AddDevice(email, iden, nickname)
+		AddDevice(email, iden, nickname, db)
 	}
 	return devices
 }
 
-func GetDevices(email string) []Device {
-	db := Connect()
+func GetDevices(email string, db *sqlx.DB) []Device {
+	if db == nil {
+		db = Connect()
+	}
 	devices := []Device{}
 	err := db.Select(&devices, DEVICES_QUERY_STR, email)
 	if err != nil {
@@ -99,8 +103,10 @@ func GetDevices(email string) []Device {
 	return devices
 }
 
-func AddDevice(email string, deviceID string, nickname string) {
-	db := Connect()
+func AddDevice(email string, deviceID string, nickname string, db *sqlx.DB) {
+	if db == nil {
+		db = Connect()
+	}
 	_, err := db.Exec(DEVICES_INS_STR, email, deviceID, nickname)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error inserting device %s for %s\n",
@@ -117,8 +123,10 @@ func DeleteDevice(deviceID string) {
 	}
 }
 
-func GetSearches(email string) []Search {
-	db := Connect()
+func GetSearches(email string, db *sqlx.DB) []Search {
+	if db == nil {
+		db = Connect()
+	}
 	searches := []Search{}
 	err := db.Select(&searches, SEARCH_QUERY_STR, email)
 	if err != nil {
@@ -204,8 +212,10 @@ func UpdateLastRes(email string, sub string, search string, url string) {
 	}
 }
 
-func AddUser(email string, interval float32) {
-	db := Connect()
+func AddUser(email string, interval float32, db *sqlx.DB) {
+	if db == nil {
+		db = Connect()
+	}
 	_, err := db.Exec(USER_INFO_INS_STR, email, interval)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating user %s\n", email)
