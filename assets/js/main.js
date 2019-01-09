@@ -1,6 +1,7 @@
 let modal = null;
 let modalContent = null;
 let searchCount=0;
+let valid = false;
 // Get Modal instance
 document.addEventListener('DOMContentLoaded', function() {
     let modalElement = document.querySelectorAll('.modal');
@@ -48,9 +49,9 @@ function newSearch() {
             <form class="col s12">
                 <div class="row">
                     <div class="input-field col s12">
-                        <input id="subname" type="text" class="validate">
+                    <input id="subname" type="text" onchange="if(this.value.trim() !== '') validateSubName(this.value.trim().toLowerCase())">
                         <label for="subname">Subreddit</label>
-                        <span class="helper-text" data-error="wrong" data-success="right">Success/Fail Goes Here</span>
+                        <span class="helper-text" id="valid-message"></span>
                     </div>
                 </div>
             </form>
@@ -81,6 +82,11 @@ function removeSearchInput() {
 
 // confirmSearch validates the search, sends it to the server, and adds it to the page
 function confirmSearch() {
+    // Check is sub is valid
+    if (!valid) {
+        M.toast({html: 'Please provide a valid subreddit name.'});
+        return;
+    }
     // Get subname and a list of all the searches
     const subname = document.getElementById('subname').value.trim().toLowerCase();
     let inputList = document.getElementsByClassName('search');
@@ -165,7 +171,7 @@ function addEditEventListeners(subname, searchList, icon) {
                     <form class="col s12">
                         <div class="row">
                             <div class="input-field col s12">
-                                <input disabled id="subname" type="text" class="validate" value="${subname}">
+                                <input disabled id="subname" type="text" value="${subname}">
                                 <label for="subname" class="active">Subreddit</label>
                             </div>
                         </div>
@@ -235,10 +241,6 @@ function updateSearch(editButton) {
         M.toast({html: 'Please provide at least one valid search term.'});
         return;
     }
-    // let obj = {
-    //     subreddit: subname,
-    //     searches: searchList,
-    // };
 
     // Build output for page
     let output = `
@@ -274,4 +276,43 @@ function updateSearch(editButton) {
     console.log(JSON.stringify(obj));
     searchCount = 0;
     modal.close();
+}
+
+function validateSubName(subname) {
+    const subJ = JSON.stringify({
+        'subname': subname,
+    });
+    let request = new XMLHttpRequest();
+    let csrfToken = getCookie("_csrf");
+    request.open('POST', '/routeName', true);
+    // Set JSON and CSRF headers
+    request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+    request.setRequestHeader('X-CSRF-Token', csrfToken);
+    request.onload = () => {
+        if (request.status >= 200 && request.status < 400) {
+            // Success!
+            let data = JSON.parse(request.responseText);
+            // Change text box color and label text/color based on validity
+            if (data.valid) {
+                document.getElementById('subname').classList.add('valid');
+                const validMessage = document.getElementById('valid-message');
+                validMessage.innerText = 'Valid';
+                validMessage.style.color = '#4CAF50';
+                valid = true;
+                return valid;
+            } else {
+                document.getElementById('subname').classList.add('invalid');
+                const validMessage = document.getElementById('valid-message');
+                validMessage.innerText = 'Subreddit is invalid.';
+                validMessage.style.color = '#F44336';
+                valid = false;
+                return valid;
+            }
+        }
+    };
+    request.onerror = () => {
+        // There was a connection error of some sort
+        console.log("There was an error of some type, please try again")
+    };
+    request.send(subJ);
 }
