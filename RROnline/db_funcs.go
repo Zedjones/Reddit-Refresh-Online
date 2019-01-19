@@ -35,7 +35,7 @@ const PASSWD_FILE = "username"
 const USER_FILE = "password"
 const CONN_STR = "postgres://%s:%s@traphouse.us/reddit_refresh_online"
 
-const DEFAULT_INTERVAL = 600
+const DEFAULT_INTERVAL = 10
 
 const SEARCH_QUERY_STR = "SELECT email, sub, search, last_result " +
 	"FROM search WHERE email = $1 ORDER BY create_time"
