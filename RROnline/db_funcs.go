@@ -28,7 +28,7 @@ type Search struct {
 
 type UserInfo struct {
 	Email    string  `db:"email"`
-	Interval float32 `db:"interval_sec"`
+	Interval float32 `db:"interval_min"`
 }
 
 const PASSWD_FILE = "username"
@@ -51,9 +51,9 @@ const SEARCH_UPD_STR = "UPDATE search SET last_result = $1" +
 	"	WHERE email = $2 AND sub = $3 AND search = $4"
 const DUP_SEARCH_ERR = "pq: duplicate key value violates unique constraint \"search_pk\""
 
-const USER_INFO_QUERY_STR = "SELECT email, interval_sec FROM user_info" +
+const USER_INFO_QUERY_STR = "SELECT email, interval_min FROM user_info" +
 	"	WHERE email = $1"
-const USER_INFO_INS_STR = "INSERT INTO user_info (email, interval_sec)" +
+const USER_INFO_INS_STR = "INSERT INTO user_info (email, interval_min)" +
 	"	VALUES ($1, $2)"
 
 const DEVICES_INS_STR = "INSERT INTO device (email, device_id, nickname)" +
