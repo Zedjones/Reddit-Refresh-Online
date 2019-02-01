@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"../Reddit-Refresh-Go/reddit_refresh_go/reddit_refresh"
 )
 
 const ABOUT_URL = "https://www.reddit.com/%s/about.json"
@@ -114,16 +112,4 @@ func GetToken(token string) string {
 	json.Unmarshal(body, &result)
 	accessToken := result["access_token"].(string)
 	return accessToken
-}
-
-func CheckResult(token string, email string, sub string, search string) {
-	newResult := reddit_refresh.GetResult(sub, search)
-	oldResult := GetLastRes(email, sub, search)
-	if oldResult != newResult.Url {
-		devices := GetDevices(email, nil)
-		for _, device := range devices {
-			reddit_refresh.SendPushLink(device.DeviceId, token, newResult)
-			UpdateLastRes(email, sub, search, newResult.Url)
-		}
-	}
 }
