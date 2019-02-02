@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 
 	"../RROnline"
 )
@@ -17,6 +16,8 @@ import (
 const PUSH_URL = "https://www.pushbullet.com/authorize?client_id=" +
 	"PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1&redirect_uri=http%3A%2F%2F" +
 	"localhost%3A1234%2Fhandle_token&response_type=code&scope=everything"
+
+var routineManager RROnline.RoutineManager
 
 type isValid struct {
 	IsValid bool `json:"is_valid"`
@@ -49,22 +50,32 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 }
 
 func main() {
-	e := echo.New()
-	e.Use(middleware.CSRF())
-	e.Use(middleware.Logger())
-	renderer := &TemplateRenderer{
-		templates: template.Must(template.ParseGlob("../templates/*.html")),
+	RROnline.GetEmail("o.FVzit3OUQUZx3WkSaeg1K88clNM1KYmN")
+	routineManager = *RROnline.CreateManager()
+	routineManager.RMAddSub("o.FVzit3OUQUZx3WkSaeg1K88clNM1KYmN",
+		"gamedeals",
+		[]string{"Battlefield 1", "Metro: Last Light"})
+	for {
+
 	}
-	e.Renderer = renderer
-	e.Static("/", "..")
-	e.POST("/validate_subreddit", validateRoute)
-	e.GET("/handle_token", handleToken)
-	e.GET("/", index)
-	e.GET("/gettingStarted", gettingStarted)
-	e.GET("/searchPage", mainPage)
-	e.POST("/addSearch", addSearch)
-	e.POST("/deleteSub", deleteSub)
-	e.Start(":1234")
+	/*
+		e := echo.New()
+		e.Use(middleware.CSRF())
+		e.Use(middleware.Logger())
+		renderer := &TemplateRenderer{
+			templates: template.Must(template.ParseGlob("../templates/*.html")),
+		}
+		e.Renderer = renderer
+		e.Static("/", "..")
+		e.POST("/validate_subreddit", validateRoute)
+		e.GET("/handle_token", handleToken)
+		e.GET("/", index)
+		e.GET("/gettingStarted", gettingStarted)
+		e.GET("/searchPage", mainPage)
+		e.POST("/addSearch", addSearch)
+		e.POST("/deleteSub", deleteSub)
+		e.Start(":1234")
+	*/
 }
 
 func validateRoute(c echo.Context) error {
