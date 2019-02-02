@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 
 	"../RROnline"
 )
@@ -50,32 +51,26 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 }
 
 func main() {
-	RROnline.GetEmail("o.FVzit3OUQUZx3WkSaeg1K88clNM1KYmN")
 	routineManager = *RROnline.CreateManager()
-	routineManager.RMAddSub("o.FVzit3OUQUZx3WkSaeg1K88clNM1KYmN",
-		"gamedeals",
+	token := "USER_TOKEN"
+	routineManager.RMAddSub(token, "gamedeals",
 		[]string{"Battlefield 1", "Metro: Last Light"})
-	for {
-
+	e := echo.New()
+	e.Use(middleware.CSRF())
+	e.Use(middleware.Logger())
+	renderer := &TemplateRenderer{
+		templates: template.Must(template.ParseGlob("../templates/*.html")),
 	}
-	/*
-		e := echo.New()
-		e.Use(middleware.CSRF())
-		e.Use(middleware.Logger())
-		renderer := &TemplateRenderer{
-			templates: template.Must(template.ParseGlob("../templates/*.html")),
-		}
-		e.Renderer = renderer
-		e.Static("/", "..")
-		e.POST("/validate_subreddit", validateRoute)
-		e.GET("/handle_token", handleToken)
-		e.GET("/", index)
-		e.GET("/gettingStarted", gettingStarted)
-		e.GET("/searchPage", mainPage)
-		e.POST("/addSearch", addSearch)
-		e.POST("/deleteSub", deleteSub)
-		e.Start(":1234")
-	*/
+	e.Renderer = renderer
+	e.Static("/", "..")
+	e.POST("/validate_subreddit", validateRoute)
+	e.GET("/handle_token", handleToken)
+	e.GET("/", index)
+	e.GET("/gettingStarted", gettingStarted)
+	e.GET("/searchPage", mainPage)
+	e.POST("/addSearch", addSearch)
+	e.POST("/deleteSub", deleteSub)
+	e.Start(":1234")
 }
 
 func validateRoute(c echo.Context) error {
@@ -167,7 +162,7 @@ func mainPage(c echo.Context) error {
 func addSearch(c echo.Context) error {
 	searches := new(Searches)
 	if err := c.Bind(searches); err != nil {
-		fmt.Fprintln(os.Stderr, "Error binding JSON body to searches.\n")
+		fmt.Fprintln(os.Stderr, "Error binding JSON body to searches.")
 	}
 	userToken, err := c.Cookie("user_token")
 	if err != nil {

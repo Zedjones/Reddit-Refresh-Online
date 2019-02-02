@@ -137,6 +137,7 @@ func GetSearches(email string, db *sqlx.DB) []Search {
 
 func GetLastRes(email string, sub string, search string) string {
 	db := Connect()
+	defer db.Close()
 	searches := []Search{}
 	err := db.Select(&searches, SEARCH_IND_QUERY_STR, email, sub, search)
 	if err != nil {

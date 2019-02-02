@@ -25,15 +25,16 @@ func (rm RoutineManager) RMAddSub(token string, sub string, searches []string) {
 		rm.masterMap[token] = make(emailSubMap)
 	}
 	for _, search := range searches {
-		rm.masterMap[token][sub] = make(subChanMap)
+		if _, ok := rm.masterMap[token][sub]; !ok {
+			rm.masterMap[token][sub] = make(subChanMap)
+		}
 		rm.RMAddSearch(token, sub, search)
 	}
 }
 
 func (rm RoutineManager) RMAddSearch(token string, sub string, search string) {
 	searchChan := make(chan bool)
-	fmt.Println("Starting goroutine")
-	go CheckResult(token, sub, search, searchChan)
+	go checkResultTesting(token, sub, search, searchChan)
 	rm.masterMap[token][sub][search] = searchChan
 }
 
@@ -47,33 +48,44 @@ func (rm RoutineManager) RMDeleteSearch(token string, sub string, search string)
 	rm.masterMap[token][sub][search] <- true
 }
 
-func CheckResult(token string, sub string, search string, listen <-chan bool) {
-	fmt.Println(token)
+func checkResult(token string, sub string, search string, listen <-chan bool) {
 	email := GetEmail(token)
-	fmt.Println(email)
-	//interval := GetInterval(email)
+	interval := GetInterval(email)
 	for {
-		fmt.Println("getting old result")
 		oldResult := GetLastRes(email, sub, search)
-		fmt.Println(oldResult)
 		newResult := reddit_refresh.GetResult(sub, search)
-		fmt.Println(newResult)
-		/*
-				if oldResult != newResult.Url {
-					fmt.Println(newResult)
-						devices := GetDevices(email, nil)
-						for _, device := range devices {
-							reddit_refresh.SendPushLink(device.DeviceId, token, newResult)
-							UpdateLastRes(email, sub, search, newResult.Url)
-						}
-				}
-			select {
-			case <-listen:
-				return
-			case <-time.After(1 * time.Minute):
-				//continue
+		fmt.Println(oldResult, newResult)
+		if oldResult != newResult.Url {
+			fmt.Println(newResult)
+			devices := GetDevices(email, nil)
+			for _, device := range devices {
+				reddit_refresh.SendPushLink(device.DeviceId, token, newResult)
+				UpdateLastRes(email, sub, search, newResult.Url)
 			}
-		*/
-		time.Sleep(1 * time.Minute)
+		}
+		select {
+		case <-listen:
+			fmt.Println("Deleting search: " + search)
+			return
+		case <-time.After(time.Duration(interval*60) * time.Second):
+			continue
+		}
+	}
+}
+
+func checkResultTesting(token string, sub string, search string, listen <-chan bool) {
+	email := GetEmail(token)
+	interval := GetInterval(email)
+	for {
+		oldResult := GetLastRes(email, sub, search)
+		newResult := reddit_refresh.GetResult(sub, search)
+		fmt.Println(oldResult, newResult)
+		select {
+		case <-listen:
+			fmt.Println("Deleting search: " + search)
+			return
+		case <-time.After(time.Duration(interval*60) * time.Second):
+			continue
+		}
 	}
 }
