@@ -35,6 +35,12 @@ func (rm RoutineManager) RMAddSub(token string, sub string, searches []string) {
 func (rm RoutineManager) RMAddSearch(token string, sub string, search string) {
 	searchChan := make(chan bool)
 	go checkResultTesting(token, sub, search, searchChan)
+	if _, ok := rm.masterMap[token]; !ok {
+		rm.masterMap[token] = make(emailSubMap)
+	}
+	if _, ok := rm.masterMap[token][sub]; !ok {
+		rm.masterMap[token][sub] = make(subChanMap)
+	}
 	rm.masterMap[token][sub][search] = searchChan
 }
 

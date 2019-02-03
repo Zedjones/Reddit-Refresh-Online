@@ -29,6 +29,7 @@ type Search struct {
 type UserInfo struct {
 	Email    string  `db:"email"`
 	Interval float32 `db:"interval_min"`
+	Token    string  `db:"access_token"`
 }
 
 const PASSWD_FILE = "username"
@@ -37,6 +38,7 @@ const CONN_STR = "postgres://%s:%s@traphouse.us/reddit_refresh_online"
 
 const DEFAULT_INTERVAL = 10
 
+const SEARCH_QUERY_ALL_STR = "SELECT email, sub, search, last_result FROM search"
 const SEARCH_QUERY_STR = "SELECT email, sub, search, last_result " +
 	"FROM search WHERE email = $1 ORDER BY create_time"
 const SEARCH_IND_QUERY_STR = "SELECT email, sub, search, last_result " +
@@ -51,9 +53,9 @@ const SEARCH_UPD_STR = "UPDATE search SET last_result = $1" +
 	"	WHERE email = $2 AND sub = $3 AND search = $4"
 const DUP_SEARCH_ERR = "pq: duplicate key value violates unique constraint \"search_pk\""
 
-const USER_INFO_QUERY_STR = "SELECT email, interval_min FROM user_info" +
+const USER_INFO_QUERY_STR = "SELECT email, interval_min, access_token FROM user_info" +
 	"	WHERE email = $1"
-const USER_INFO_INS_STR = "INSERT INTO user_info (email, interval_min)" +
+const USER_INFO_INS_STR = "INSERT INTO user_info (email, interval_min, access_token)" +
 	"	VALUES ($1, $2)"
 
 const DEVICES_INS_STR = "INSERT INTO device (email, device_id, nickname)" +
@@ -121,6 +123,16 @@ func DeleteDevice(deviceID string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error deleting device %s\n", deviceID)
 	}
+}
+
+func GetAllSearches() []Search {
+	db := Connect()
+	searches := []Search{}
+	err := db.Select(&searches, SEARCH_QUERY_ALL_STR)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting all searches\n")
+	}
+	return searches
 }
 
 func GetSearches(email string, db *sqlx.DB) []Search {
@@ -198,10 +210,20 @@ func GetInterval(email string) float32 {
 	db := Connect()
 	users := []UserInfo{}
 	err := db.Select(&users, USER_INFO_QUERY_STR, email)
-	if err != nil {
+	if err != nil || len(users) == 0 {
 		fmt.Fprintf(os.Stderr, "Error getting interval for %s\n", email)
 	}
 	return users[0].Interval
+}
+
+func GetUserToken(email string) string {
+	db := Connect()
+	users := []UserInfo{}
+	err := db.Select(&users, USER_INFO_QUERY_STR, email)
+	if err != nil || len(users) == 0 {
+		fmt.Fprintf(os.Stderr, "Error getting token for %s\n", email)
+	}
+	return users[0].Token
 }
 
 func UpdateLastRes(email string, sub string, search string, url string) {
@@ -213,11 +235,11 @@ func UpdateLastRes(email string, sub string, search string, url string) {
 	}
 }
 
-func AddUser(email string, interval float32, db *sqlx.DB) {
+func AddUser(email string, interval float32, token string, db *sqlx.DB) {
 	if db == nil {
 		db = Connect()
 	}
-	_, err := db.Exec(USER_INFO_INS_STR, email, interval)
+	_, err := db.Exec(USER_INFO_INS_STR, email, interval, token)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating user %s\n", email)
 	}

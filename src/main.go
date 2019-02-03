@@ -52,9 +52,11 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 
 func main() {
 	routineManager = *RROnline.CreateManager()
-	token := "USER_TOKEN"
-	routineManager.RMAddSub(token, "gamedeals",
-		[]string{"Battlefield 1", "Metro: Last Light"})
+	searches := RROnline.GetAllSearches()
+	for _, item := range searches {
+		token := RROnline.GetUserToken(item.Email)
+		routineManager.RMAddSearch(token, item.Sub, item.Search)
+	}
 	e := echo.New()
 	e.Use(middleware.CSRF())
 	e.Use(middleware.Logger())
@@ -106,7 +108,7 @@ func handleToken(c echo.Context) error {
 	email := RROnline.GetEmail(userTok)
 	if !RROnline.UserExists(email) {
 		db := RROnline.Connect()
-		RROnline.AddUser(email, RROnline.DEFAULT_INTERVAL, db)
+		RROnline.AddUser(email, RROnline.DEFAULT_INTERVAL, userTok, db)
 		RROnline.RefreshDevices(userTok, db)
 	}
 	return c.Redirect(http.StatusFound, "/searchPage")
