@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -57,6 +58,8 @@ const USER_INFO_QUERY_STR = "SELECT email, interval_min, access_token FROM user_
 	"	WHERE email = $1"
 const USER_INFO_INS_STR = "INSERT INTO user_info (email, interval_min, access_token)" +
 	"	VALUES ($1, $2)"
+const USER_INFO_UPD_STR = "UPDATE user_info SET access_token = $1" +
+	"	WHERE email = $2"
 
 const DEVICES_INS_STR = "INSERT INTO device (email, device_id, nickname)" +
 	"	VALUES ($1, $2, $3)"
@@ -87,9 +90,13 @@ func RefreshDevices(token string, db *sqlx.DB) map[string]string {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error deleting devices for %s", email)
 	}
+	var wg sync.WaitGroup
+	wg.Add(len(devices))
+	fmt.Println(devices)
 	for nickname, iden := range devices {
-		AddDevice(email, iden, nickname, db)
+		go AddDevice(email, iden, nickname, db, &wg)
 	}
+	wg.Wait()
 	return devices
 }
 
@@ -105,7 +112,9 @@ func GetDevices(email string, db *sqlx.DB) []Device {
 	return devices
 }
 
-func AddDevice(email string, deviceID string, nickname string, db *sqlx.DB) {
+func AddDevice(email string, deviceID string, nickname string, db *sqlx.DB, wg *sync.WaitGroup) {
+	//wait until end of function to tell wait group that we're exiting
+	defer wg.Done()
 	if db == nil {
 		db = Connect()
 	}
@@ -164,6 +173,7 @@ func DeleteMissingSearches(email string, sub string, searches []string) error {
 	query, args, err := sqlx.In(SEARCH_DEL_STR, email, sub, searches)
 	query = sqlx.Rebind(sqlx.DOLLAR, query)
 	_, err = db.Exec(query, args...)
+	// TODO: figure out how to delete old search goroutines
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error deleting old searches for (%s, %s)\n",
 			email, sub)
@@ -181,6 +191,7 @@ func DeleteSub(email string, sub string) error {
 			email, sub)
 		return errors.New("Could not delete sub")
 	}
+	// TODO: add code to delete all sub goroutines
 	return nil
 }
 
@@ -193,7 +204,7 @@ func AddSearch(email string, sub string, search string) {
 			fmt.Println(err)
 		}
 	}
-	//TODO: add code to start a search thread
+	//TODO: add code to start a search goroutine
 }
 
 func UserExists(email string) bool {
@@ -224,6 +235,14 @@ func GetUserToken(email string) string {
 		fmt.Fprintf(os.Stderr, "Error getting token for %s\n", email)
 	}
 	return users[0].Token
+}
+
+func UpdateUserToken(email string, token string) {
+	db := Connect()
+	_, err := db.Exec(USER_INFO_UPD_STR, token, email)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating %s to %s\n", email, token)
+	}
 }
 
 func UpdateLastRes(email string, sub string, search string, url string) {
