@@ -161,7 +161,7 @@ func GetLastRes(email string, sub string, search string) string {
 	defer db.Close()
 	searches := []Search{}
 	err := db.Select(&searches, SEARCH_IND_QUERY_STR, email, sub, search)
-	if err != nil {
+	if err != nil || len(searches) == 0 {
 		fmt.Fprintf(os.Stderr, fmt.Sprintf("Error getting search (%s, %s, %s)",
 			email, sub, search))
 	}
