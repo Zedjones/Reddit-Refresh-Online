@@ -108,7 +108,7 @@ func handleToken(c echo.Context) error {
 	email := RROnline.GetEmail(userTok)
 	if !RROnline.UserExists(email) {
 		db := RROnline.Connect()
-		RROnline.AddUser(email, RROnline.DEFAULT_INTERVAL, userTok, db)
+		RROnline.AddUser(email, RROnline.DefaultInterval, userTok, db)
 		RROnline.RefreshDevices(userTok, db)
 	} else {
 		RROnline.UpdateUserToken(email, userTok)

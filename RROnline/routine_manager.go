@@ -65,7 +65,7 @@ func checkResult(token string, sub string, search string, listen <-chan bool) {
 			fmt.Println(newResult)
 			devices := GetDevices(email, nil)
 			for _, device := range devices {
-				reddit_refresh.SendPushLink(device.DeviceId, token, newResult)
+				reddit_refresh.SendPushLink(device.DeviceID, token, newResult)
 				UpdateLastRes(email, sub, search, newResult.Url)
 			}
 		}
