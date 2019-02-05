@@ -7,19 +7,32 @@ import (
 	"../Reddit-Refresh-Go/reddit_refresh_go/reddit_refresh"
 )
 
+//subChanMap maps searches to channels
 type subChanMap map[string]chan<- bool
+
+//emailSubMap maps emails (users) to subChanMaps
 type emailSubMap map[string]subChanMap
 
+/*
+RoutineManager controls operations on all goroutines for checking search results
+*/
 type RoutineManager struct {
 	masterMap map[string]emailSubMap
 }
 
+/*
+CreateManager make a new RoutineManager and initializes the masterMap
+*/
 func CreateManager() *RoutineManager {
 	rm := RoutineManager{}
 	rm.masterMap = make(map[string]emailSubMap)
 	return &rm
 }
 
+/*
+RMAddSub creates the goroutines for a subreddit and list of searches,
+also creating the necessary maps
+*/
 func (rm RoutineManager) RMAddSub(token string, sub string, searches []string) {
 	if _, ok := rm.masterMap[token]; !ok {
 		rm.masterMap[token] = make(emailSubMap)
@@ -32,6 +45,10 @@ func (rm RoutineManager) RMAddSub(token string, sub string, searches []string) {
 	}
 }
 
+/*
+RMAddSearch creates a goroutine for the provided subreddit and search,
+also creating the necesssary maps
+*/
 func (rm RoutineManager) RMAddSearch(token string, sub string, search string) {
 	searchChan := make(chan bool)
 	go checkResultTesting(token, sub, search, searchChan)
@@ -44,16 +61,29 @@ func (rm RoutineManager) RMAddSearch(token string, sub string, search string) {
 	rm.masterMap[token][sub][search] = searchChan
 }
 
+/*
+RMDeleteSub kills all goroutines for a given subreddit
+*/
 func (rm RoutineManager) RMDeleteSub(token string, sub string) {
 	for search := range rm.masterMap[token][sub] {
 		rm.RMDeleteSearch(token, sub, search)
 	}
 }
 
+/*
+RMDeleteSearch kills a search goroutine for the given user by sending a
+signal over the channel
+*/
 func (rm RoutineManager) RMDeleteSearch(token string, sub string, search string) {
 	rm.masterMap[token][sub][search] <- true
 }
 
+/*
+checkResult checks the latest result for the search term and compares it to the
+last result stored in the database. If it's different (i.e. newer), then it
+sends a push to each of the user's active devices and updates the last
+result in the database to the new URL.
+*/
 func checkResult(token string, sub string, search string, listen <-chan bool) {
 	email := GetEmail(token)
 	interval := GetInterval(email)
@@ -69,6 +99,8 @@ func checkResult(token string, sub string, search string, listen <-chan bool) {
 				UpdateLastRes(email, sub, search, newResult.Url)
 			}
 		}
+		//either we get a value over the channel or the temporary timeout
+		//channel returns
 		select {
 		case <-listen:
 			fmt.Println("Deleting search: " + search)
@@ -79,6 +111,10 @@ func checkResult(token string, sub string, search string, listen <-chan bool) {
 	}
 }
 
+/*
+A testing version of checkResult that only prints the new result and doesn't
+send a push or update the link in the database
+*/
 func checkResultTesting(token string, sub string, search string, listen <-chan bool) {
 	email := GetEmail(token)
 	interval := GetInterval(email)
