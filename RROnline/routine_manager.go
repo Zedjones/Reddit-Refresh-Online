@@ -34,12 +34,13 @@ RMAddSub creates the goroutines for a subreddit and list of searches,
 also creating the necessary maps
 */
 func (rm RoutineManager) RMAddSub(token string, sub string, searches []string) {
-	if _, ok := rm.masterMap[token]; !ok {
-		rm.masterMap[token] = make(emailSubMap)
+	email := GetEmail(token)
+	if _, ok := rm.masterMap[email]; !ok {
+		rm.masterMap[email] = make(emailSubMap)
 	}
 	for _, search := range searches {
-		if _, ok := rm.masterMap[token][sub]; !ok {
-			rm.masterMap[token][sub] = make(subChanMap)
+		if _, ok := rm.masterMap[email][sub]; !ok {
+			rm.masterMap[email][sub] = make(subChanMap)
 		}
 		rm.RMAddSearch(token, sub, search)
 	}
@@ -50,23 +51,24 @@ RMAddSearch creates a goroutine for the provided subreddit and search,
 also creating the necesssary maps
 */
 func (rm RoutineManager) RMAddSearch(token string, sub string, search string) {
+	email := GetEmail(token)
 	searchChan := make(chan bool)
 	go checkResultTesting(token, sub, search, searchChan)
-	if _, ok := rm.masterMap[token]; !ok {
-		rm.masterMap[token] = make(emailSubMap)
+	if _, ok := rm.masterMap[email]; !ok {
+		rm.masterMap[email] = make(emailSubMap)
 	}
-	if _, ok := rm.masterMap[token][sub]; !ok {
-		rm.masterMap[token][sub] = make(subChanMap)
+	if _, ok := rm.masterMap[email][sub]; !ok {
+		rm.masterMap[email][sub] = make(subChanMap)
 	}
-	rm.masterMap[token][sub][search] = searchChan
+	rm.masterMap[email][sub][search] = searchChan
 }
 
 /*
 RMDeleteSub kills all goroutines for a given subreddit
 */
-func (rm RoutineManager) RMDeleteSub(token string, sub string) {
-	for search := range rm.masterMap[token][sub] {
-		rm.RMDeleteSearch(token, sub, search)
+func (rm RoutineManager) RMDeleteSub(email string, sub string) {
+	for search := range rm.masterMap[email][sub] {
+		rm.RMDeleteSearch(email, sub, search)
 	}
 }
 
@@ -74,8 +76,8 @@ func (rm RoutineManager) RMDeleteSub(token string, sub string) {
 RMDeleteSearch kills a search goroutine for the given user by sending a
 signal over the channel
 */
-func (rm RoutineManager) RMDeleteSearch(token string, sub string, search string) {
-	rm.masterMap[token][sub][search] <- true
+func (rm RoutineManager) RMDeleteSearch(email string, sub string, search string) {
+	rm.masterMap[email][sub][search] <- true
 }
 
 /*

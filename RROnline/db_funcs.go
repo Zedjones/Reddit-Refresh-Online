@@ -56,6 +56,8 @@ const searchIndQueryStr = "SELECT email, sub, search, last_result " +
 	"FROM search WHERE email = $1 and sub = $2 and search = $3"
 const searchDelStr = "DELETE FROM search " +
 	"WHERE email = ? AND sub = ? AND search NOT IN (?)"
+const searchQueryMissingStr = "SELECT email, sub, search, last_result " +
+	"FROM search WHERE email = ? AND sub = ? AND search NOT IN (?)"
 const searchDelSubStr = "DELETE FROM search " +
 	"WHERE email = $1 AND sub = $2"
 const searchInsStr = "INSERT INTO search (email, sub, search, last_result)" +
@@ -219,17 +221,30 @@ DeleteMissingSearches deletes all searchs in the DB
 not in the searches slice
 searches is a slice containing the new searches
 */
-func DeleteMissingSearches(email string, sub string, searches []string) error {
+func DeleteMissingSearches(email string, sub string, searches []string, rm *RoutineManager) error {
 	db := Connect()
-	query, args, err := sqlx.In(searchDelStr, email, sub, searches)
+	//create query to get missing searches
+	query, args, err := sqlx.In(searchQueryMissingStr, email, sub, searches)
 	query = sqlx.Rebind(sqlx.DOLLAR, query)
-	result, err := db.Exec(query, args...)
-	fmt.Println(result.RowsAffected())
+	searchStructs := []Search{}
+	err = db.Select(&searchStructs, query, args...)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error getting missing results")
+	}
+	fmt.Println("about to delete search threads")
+	for _, item := range searchStructs {
+		fmt.Println("Deleting thread: " + item.Sub + ":" + item.Search)
+		rm.RMDeleteSearch(email, item.Sub, item.Search)
+	}
+	fmt.Println("now deleting redundant searches")
+	//create query to delete missing searches
+	query, args, err = sqlx.In(searchDelStr, email, sub, searches)
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	_, err = db.Exec(query, args...)
 	// TODO: figure out how to delete old search goroutines
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error deleting old searches for (%s, %s)\n",
 			email, sub)
-		fmt.Println(err)
 		return errors.New("Could not delete old searches")
 	}
 	return nil
