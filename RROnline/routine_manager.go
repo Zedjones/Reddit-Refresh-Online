@@ -52,15 +52,17 @@ also creating the necesssary maps
 */
 func (rm RoutineManager) RMAddSearch(token string, sub string, search string) {
 	email := GetEmail(token)
-	searchChan := make(chan bool)
-	go checkResultTesting(token, sub, search, searchChan)
 	if _, ok := rm.masterMap[email]; !ok {
 		rm.masterMap[email] = make(emailSubMap)
 	}
 	if _, ok := rm.masterMap[email][sub]; !ok {
 		rm.masterMap[email][sub] = make(subChanMap)
 	}
-	rm.masterMap[email][sub][search] = searchChan
+	if _, ok := rm.masterMap[email][sub][search]; !ok {
+		searchChan := make(chan bool)
+		go checkResultTesting(token, sub, search, searchChan)
+		rm.masterMap[email][sub][search] = searchChan
+	}
 }
 
 /*

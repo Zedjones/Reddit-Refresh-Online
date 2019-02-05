@@ -164,7 +164,6 @@ func mainPage(c echo.Context) error {
 }
 
 func addSearch(c echo.Context) error {
-	fmt.Println("Calling add search")
 	searches := new(Searches)
 	if err := c.Bind(searches); err != nil {
 		fmt.Fprintln(os.Stderr, "Error binding JSON body to searches.")
@@ -175,11 +174,11 @@ func addSearch(c echo.Context) error {
 	}
 	email := RROnline.GetEmail(userToken.Value)
 	for _, search := range searches.Searches {
-		RROnline.AddSearch(email, searches.Sub, search)
+		RROnline.AddSearch(userToken.Value, email, searches.Sub,
+			search, routineManager)
 	}
-	fmt.Println("Deleting missing searches")
 	RROnline.DeleteMissingSearches(email, searches.Sub,
-		searches.Searches, &routineManager)
+		searches.Searches, routineManager)
 	return nil
 }
 

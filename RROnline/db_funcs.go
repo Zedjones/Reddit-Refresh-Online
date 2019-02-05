@@ -221,7 +221,7 @@ DeleteMissingSearches deletes all searchs in the DB
 not in the searches slice
 searches is a slice containing the new searches
 */
-func DeleteMissingSearches(email string, sub string, searches []string, rm *RoutineManager) error {
+func DeleteMissingSearches(email string, sub string, searches []string, rm RoutineManager) error {
 	db := Connect()
 	//create query to get missing searches
 	query, args, err := sqlx.In(searchQueryMissingStr, email, sub, searches)
@@ -231,12 +231,9 @@ func DeleteMissingSearches(email string, sub string, searches []string, rm *Rout
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error getting missing results")
 	}
-	fmt.Println("about to delete search threads")
 	for _, item := range searchStructs {
-		fmt.Println("Deleting thread: " + item.Sub + ":" + item.Search)
 		rm.RMDeleteSearch(email, item.Sub, item.Search)
 	}
-	fmt.Println("now deleting redundant searches")
 	//create query to delete missing searches
 	query, args, err = sqlx.In(searchDelStr, email, sub, searches)
 	query = sqlx.Rebind(sqlx.DOLLAR, query)
@@ -268,7 +265,7 @@ func DeleteSub(email string, sub string) error {
 /*
 AddSearch adds a single search to the DB for a given user and subreddit
 */
-func AddSearch(email string, sub string, search string) {
+func AddSearch(token string, email string, sub string, search string, rm RoutineManager) {
 	db := Connect()
 	_, err := db.Exec(searchInsStr, email, sub, search, "")
 	if err != nil {
@@ -277,7 +274,7 @@ func AddSearch(email string, sub string, search string) {
 			fmt.Println(err)
 		}
 	}
-	//TODO: add code to start a search goroutine
+	rm.RMAddSearch(token, sub, search)
 }
 
 /*
