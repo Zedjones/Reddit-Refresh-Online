@@ -238,7 +238,6 @@ func DeleteMissingSearches(email string, sub string, searches []string, rm Routi
 	query, args, err = sqlx.In(searchDelStr, email, sub, searches)
 	query = sqlx.Rebind(sqlx.DOLLAR, query)
 	_, err = db.Exec(query, args...)
-	// TODO: figure out how to delete old search goroutines
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error deleting old searches for (%s, %s)\n",
 			email, sub)
@@ -250,7 +249,7 @@ func DeleteMissingSearches(email string, sub string, searches []string, rm Routi
 /*
 DeleteSub deletes all the searches in the database for a given user and subreddit
 */
-func DeleteSub(email string, sub string) error {
+func DeleteSub(email string, sub string, rm RoutineManager) error {
 	db := Connect()
 	_, err := db.Exec(searchDelSubStr, email, sub)
 	if err != nil {
@@ -258,7 +257,7 @@ func DeleteSub(email string, sub string) error {
 			email, sub)
 		return errors.New("Could not delete sub")
 	}
-	// TODO: add code to delete all sub goroutines
+	rm.RMDeleteSub(email, sub)
 	return nil
 }
 

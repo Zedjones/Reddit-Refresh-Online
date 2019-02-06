@@ -192,7 +192,7 @@ func deleteSub(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/")
 	}
 	email := RROnline.GetEmail(userToken.Value)
-	err = RROnline.DeleteSub(email, sub.Sub)
+	err = RROnline.DeleteSub(email, sub.Sub, routineManager)
 	if err != nil {
 		//TODO: handle error here
 	}
