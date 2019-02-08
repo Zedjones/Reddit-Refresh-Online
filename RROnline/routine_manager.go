@@ -60,7 +60,7 @@ func (rm RoutineManager) RMAddSearch(token string, sub string, search string) {
 	}
 	if _, ok := rm.masterMap[email][sub][search]; !ok {
 		searchChan := make(chan bool)
-		go checkResultTesting(token, sub, search, searchChan)
+		go checkResult(token, sub, search, searchChan)
 		rm.masterMap[email][sub][search] = searchChan
 	}
 }
