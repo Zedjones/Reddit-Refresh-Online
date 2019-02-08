@@ -21,7 +21,7 @@ const PUSH_URL = "https://www.pushbullet.com/authorize?client_id=" +
 var routineManager RROnline.RoutineManager
 
 type isValid struct {
-	IsValid bool `json:"is_valid"`
+	IsValid bool `json:"valid"`
 }
 
 type userToken struct {
@@ -65,7 +65,7 @@ func main() {
 	}
 	e.Renderer = renderer
 	e.Static("/", "..")
-	e.POST("/validate_subreddit", validateRoute)
+	e.POST("/validateSubreddit", validateRoute)
 	e.GET("/handle_token", handleToken)
 	e.GET("/", index)
 	e.GET("/gettingStarted", gettingStarted)
@@ -76,12 +76,14 @@ func main() {
 }
 
 func validateRoute(c echo.Context) error {
-	sub := c.QueryParam("sub")
-	fmt.Printf(sub)
-	if sub == "" {
-		return c.NoContent(http.StatusNotFound)
+	sub := new(Sub)
+	if err := c.Bind(sub); err != nil {
+		fmt.Fprintln(os.Stderr, "Error binding JSON body to sub.")
 	}
-	jsonBody := &isValid{RROnline.ValidateSub(sub)}
+	if sub.Sub == "" {
+		return c.NoContent(http.StatusBadRequest)
+	}
+	jsonBody := &isValid{RROnline.ValidateSub(sub.Sub)}
 	return c.JSON(http.StatusOK, jsonBody)
 }
 

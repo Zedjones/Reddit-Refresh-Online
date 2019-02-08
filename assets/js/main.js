@@ -280,11 +280,11 @@ function updateSearch(editButton) {
 
 function validateSubName(subname) {
     const subJ = JSON.stringify({
-        'subname': subname,
+        'subreddit': subname,
     });
     let request = new XMLHttpRequest();
     let csrfToken = getCookie("_csrf");
-    request.open('POST', '/routeName', true);
+    request.open('POST', '/validateSubreddit', true);
     // Set JSON and CSRF headers
     request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
     request.setRequestHeader('X-CSRF-Token', csrfToken);
