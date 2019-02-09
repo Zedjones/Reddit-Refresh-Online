@@ -51,12 +51,8 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 }
 
 func main() {
-	routineManager = *RROnline.CreateManager()
-	searches := RROnline.GetAllSearches()
-	for _, item := range searches {
-		token := RROnline.GetUserToken(item.Email)
-		routineManager.RMAddSearch(token, item.Sub, item.Search)
-	}
+	RROnline.LoadConfig()
+	go startSearches()
 	e := echo.New()
 	e.Use(middleware.CSRF())
 	e.Use(middleware.Logger())
@@ -73,6 +69,15 @@ func main() {
 	e.POST("/addSearch", addSearch)
 	e.POST("/deleteSub", deleteSub)
 	e.Start(":1234")
+}
+
+func startSearches() {
+	routineManager = *RROnline.CreateManager()
+	searches := RROnline.GetAllSearches()
+	for _, item := range searches {
+		token := RROnline.GetUserToken(item.Email)
+		routineManager.RMAddSearch(token, item.Sub, item.Search)
+	}
 }
 
 func validateRoute(c echo.Context) error {

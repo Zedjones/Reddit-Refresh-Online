@@ -1,6 +1,7 @@
 package RROnline
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -42,9 +43,14 @@ type UserInfo struct {
 	Token    string  `db:"access_token"`
 }
 
-const passwdFile = "username"
-const userFile = "password"
-const connStr = "postgres://%s:%s@traphouse.us/reddit_refresh_online"
+type dbConfig struct {
+	User string `json:"username"`
+	Pass string `json:"password"`
+	DB   string `json:"db"`
+}
+
+const confFile = "../Settings.json"
+const connStr = "postgres://%s:%s@traphouse.us/%s"
 
 //DefaultInterval is the default interval for a user when first created
 const DefaultInterval = 10
@@ -80,14 +86,29 @@ const devicesQueryStr = "SELECT email, device_id, nickname, active" +
 const devicesDelStr = "DELETE FROM device WHERE device_id = $1"
 const devicesDelAllStr = "DELETE FROM device WHERE email = $1"
 
+var config dbConfig
+
+/*
+LoadConfig loads the configuration for the database from the settngs file
+specified by confFile
+*/
+func LoadConfig() {
+	content, err := ioutil.ReadFile(confFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading config file.\n")
+	}
+	config = dbConfig{}
+	if err = json.Unmarshal(content, &config); err != nil {
+		fmt.Fprintf(os.Stderr, "Error unmarshalling config file.\n")
+	}
+}
+
 /*
 Connect returns a sqlx database connection for the database
 */
 func Connect() *sqlx.DB {
-	username, _ := ioutil.ReadFile(userFile)
-	password, _ := ioutil.ReadFile(passwdFile)
 	_ = pq.Efatal //weird fix for bug with pq
-	fullConStr := fmt.Sprintf(connStr, string(password), string(username))
+	fullConStr := fmt.Sprintf(connStr, config.User, config.Pass, config.DB)
 	db, err := sqlx.Open("postgres", fullConStr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error connecting to PGSQL DB.\n")

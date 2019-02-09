@@ -96,7 +96,6 @@ func checkResult(token string, sub string, search string, listen <-chan bool) {
 		newResult := reddit_refresh.GetResult(sub, search)
 		fmt.Println(oldResult, newResult)
 		if oldResult != newResult.Url {
-			fmt.Println(newResult)
 			devices := GetDevices(email, nil)
 			for _, device := range devices {
 				reddit_refresh.SendPushLink(device.DeviceID, token, newResult)
