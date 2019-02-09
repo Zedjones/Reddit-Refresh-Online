@@ -138,10 +138,10 @@ func gettingStarted(c echo.Context) error {
 
 func mainPage(c echo.Context) error {
 	userToken, err := c.Cookie("user_token")
-	RROnline.RefreshDevices(userToken.Value, nil)
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/")
 	}
+	RROnline.RefreshDevices(userToken.Value, nil)
 	name := RROnline.GetUserName(userToken.Value)
 	email := RROnline.GetEmail(userToken.Value)
 	db := RROnline.Connect()
