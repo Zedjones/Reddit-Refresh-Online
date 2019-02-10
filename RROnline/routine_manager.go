@@ -94,7 +94,6 @@ func checkResult(token string, sub string, search string, listen <-chan bool) {
 	for {
 		oldResult := GetLastRes(email, sub, search)
 		newResult := reddit_refresh.GetResult(sub, search)
-		fmt.Println(oldResult, newResult)
 		if oldResult != newResult.Url {
 			devices := GetDevices(email, nil)
 			for _, device := range devices {

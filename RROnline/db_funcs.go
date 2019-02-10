@@ -121,7 +121,7 @@ RefreshDevices refreshes the user's devices in the database
 token is the user's Pushbullet API token
 db is the database to use for connection, or nil
 */
-func RefreshDevices(token string, db *sqlx.DB) map[string]string {
+func RefreshDevices(token string, db *sqlx.DB, rChan chan bool) {
 	if db == nil {
 		db = Connect()
 	}
@@ -133,13 +133,14 @@ func RefreshDevices(token string, db *sqlx.DB) map[string]string {
 	}
 	var wg sync.WaitGroup
 	wg.Add(len(devices))
-	fmt.Println(devices)
 	for nickname, iden := range devices {
 		go AddDevice(email, iden, nickname, db, &wg)
 	}
 	//wait for all AddDevice calls to exit
 	wg.Wait()
-	return devices
+	if rChan != nil {
+		rChan <- true
+	}
 }
 
 /*

@@ -116,7 +116,7 @@ func handleToken(c echo.Context) error {
 	if !RROnline.UserExists(email) {
 		db := RROnline.Connect()
 		RROnline.AddUser(email, RROnline.DefaultInterval, userTok, db)
-		RROnline.RefreshDevices(userTok, db)
+		RROnline.RefreshDevices(userTok, db, nil)
 	} else {
 		RROnline.UpdateUserToken(email, userTok)
 	}
@@ -146,10 +146,11 @@ func mainPage(c echo.Context) error {
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/")
 	}
-	RROnline.RefreshDevices(userToken.Value, nil)
+	refreshChan := make(chan bool)
+	db := RROnline.Connect()
+	go RROnline.RefreshDevices(userToken.Value, db, refreshChan)
 	name := RROnline.GetUserName(userToken.Value)
 	email := RROnline.GetEmail(userToken.Value)
-	db := RROnline.Connect()
 	searches := RROnline.GetSearches(email, db)
 	searchMap := make(map[string][]string)
 	for _, search := range searches {
@@ -159,6 +160,7 @@ func mainPage(c echo.Context) error {
 			searchMap[search.Sub] = []string{search.Search}
 		}
 	}
+	<-refreshChan
 	devices := RROnline.GetDevices(email, db)
 	data := make(map[string]interface{})
 	data["name"] = name
