@@ -238,8 +238,7 @@ func GetLastRes(email string, sub string, search string) string {
 }
 
 /*
-DeleteMissingSearches deletes all searchs in the DB
-not in the searches slice
+DeleteMissingSearches deletes all searches in the DB not in the searches slice
 searches is a slice containing the new searches
 */
 func DeleteMissingSearches(email string, sub string, searches []string, rm RoutineManager) error {
