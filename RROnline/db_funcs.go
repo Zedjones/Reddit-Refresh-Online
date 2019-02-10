@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
@@ -73,22 +74,22 @@ const searchUpdStr = "UPDATE search SET last_result = $1" +
 	"	WHERE email = $2 AND sub = $3 AND search = $4"
 const dupSearchErr = "pq: duplicate key value violates unique constraint \"search_pk\""
 
-const userInfoQueryStr = "SELECT email, interval_min, access_token, last_device_refresh FROM user_info" +
+const userInfoQueryStr = "SELECT email, interval_min, access_token FROM user_info" +
 	"	WHERE email = $1"
 const userInfoInsStr = "INSERT INTO user_info (email, access_token)" +
 	"	VALUES ($1, $2)"
 const userInfoUpdStr = "UPDATE user_info SET access_token = $1" +
 	"	WHERE email = $2"
-const userInfoCheckUpd = "SELECT email, interval_min, access_token, last_device_refresh FROM user_info" +
-	"	WHERE last_device_refresh < now() - interval '5 days' AND email = $1"
-const userInfoUpdRefresh = "UPDATE user_info SET last_device_refresh = now()" +
-	"	WHERE email = $1"
 
 const devicesInsStr = "INSERT INTO device (email, device_id, nickname)" +
 	"	VALUES ($1, $2, $3)"
 const devicesQueryStr = "SELECT email, device_id, nickname, active" +
 	"	FROM device WHERE email = $1"
 const devicesDelStr = "DELETE FROM device WHERE device_id = $1"
+const devicesDelMissingStr = "DELETE FROM device WHERE email = ?" +
+	"	AND device_id NOT IN (?)"
+const devicesUpdMissingStr1 = "INSERT INTO device (email, device_id, nickname) VALUES "
+const devicesUpdMissingStr2 = "		ON CONFLICT (device_id) DO NOTHING"
 const devicesDelAllStr = "DELETE FROM device WHERE email = $1"
 
 var config dbConfig
@@ -131,26 +132,34 @@ func RefreshDevices(token string, db *sqlx.DB, rChan chan bool) {
 		db = Connect()
 	}
 	email := GetEmail(token)
-	user := []UserInfo{}
-	if err := db.Select(&user, userInfoCheckUpd, email); err != nil {
-		fmt.Fprintf(os.Stderr, "Error checking user info")
+	devices := reddit_refresh.GetDevices(token)
+	//first part of string, before values
+	sqlStr := devicesUpdMissingStr1
+	vals := []interface{}{}
+	ids := []string{}
+	//add each value to the args... and the sqlStr
+	for nickname, iden := range devices {
+		sqlStr += "(?, ?, ?),"
+		vals = append(vals, email, iden, nickname)
+		ids = append(ids, iden)
 	}
-	if len(user) != 0 {
-		devices := reddit_refresh.GetDevices(token)
-		_, err := db.Exec(devicesDelAllStr, email)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error deleting devices for %s", email)
-		}
-		var wg sync.WaitGroup
-		wg.Add(len(devices))
-		for nickname, iden := range devices {
-			fmt.Println(nickname, iden)
-			go AddDevice(email, iden, nickname, db, &wg)
-		}
-		//wait for all AddDevice calls to exit
-		UpdateDeviceCheck(email, db)
-		wg.Wait()
+	sqlStr = strings.TrimSuffix(sqlStr, ",")
+	//change ? into $n
+	sqlStr = sqlx.Rebind(sqlx.DOLLAR, sqlStr)
+	//add last section about ignoring duplicate values in insert
+	sqlStr += devicesUpdMissingStr2
+	if _, err := db.Exec(sqlStr, vals...); err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating devices for %s\n", email)
 	}
+	sqlStr, vals, err := sqlx.In(devicesDelMissingStr, email, ids)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error constructing query to deleting missing devices\n")
+	}
+	sqlStr = sqlx.Rebind(sqlx.DOLLAR, sqlStr)
+	if _, err = db.Exec(sqlStr, vals...); err != nil {
+		fmt.Fprintf(os.Stderr, "Error removing old devices for %s\n", email)
+	}
+	//tell main routine that we're done
 	if rChan != nil {
 		rChan <- true
 	}
@@ -370,12 +379,6 @@ func UpdateLastRes(email string, sub string, search string, url string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error updating (%s, %s, %s) to %s\n",
 			email, sub, search, url)
-	}
-}
-
-func UpdateDeviceCheck(email string, db *sqlx.DB) {
-	if _, err := db.Exec(userInfoUpdRefresh, email); err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating last_device_refresh for %s\n", email)
 	}
 }
 
