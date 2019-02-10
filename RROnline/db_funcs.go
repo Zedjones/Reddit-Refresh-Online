@@ -41,6 +41,7 @@ type UserInfo struct {
 	Email    string  `db:"email"`
 	Interval float32 `db:"interval_min"`
 	Token    string  `db:"access_token"`
+	DevRef   string  `db:"last_device_refresh"`
 }
 
 type dbConfig struct {
@@ -72,9 +73,9 @@ const searchUpdStr = "UPDATE search SET last_result = $1" +
 	"	WHERE email = $2 AND sub = $3 AND search = $4"
 const dupSearchErr = "pq: duplicate key value violates unique constraint \"search_pk\""
 
-const userInfoQueryStr = "SELECT email, interval_min, access_token FROM user_info" +
+const userInfoQueryStr = "SELECT email, interval_min, access_token, last_device_refresh FROM user_info" +
 	"	WHERE email = $1"
-const userInfoInsStr = "INSERT INTO user_info (email, interval_min, access_token)" +
+const userInfoInsStr = "INSERT INTO user_info (email, access_token)" +
 	"	VALUES ($1, $2)"
 const userInfoUpdStr = "UPDATE user_info SET access_token = $1" +
 	"	WHERE email = $2"
@@ -363,11 +364,11 @@ func UpdateLastRes(email string, sub string, search string, url string) {
 /*
 AddUser adds a user to the database given their interval and token
 */
-func AddUser(email string, interval float32, token string, db *sqlx.DB) {
+func AddUser(email string, token string, db *sqlx.DB) {
 	if db == nil {
 		db = Connect()
 	}
-	_, err := db.Exec(userInfoInsStr, email, interval, token)
+	_, err := db.Exec(userInfoInsStr, email, token)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating user %s\n", email)
 	}
