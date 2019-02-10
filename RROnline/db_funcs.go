@@ -79,6 +79,10 @@ const userInfoInsStr = "INSERT INTO user_info (email, access_token)" +
 	"	VALUES ($1, $2)"
 const userInfoUpdStr = "UPDATE user_info SET access_token = $1" +
 	"	WHERE email = $2"
+const userInfoCheckUpd = "SELECT email, interval_min, access_token, last_device_refresh FROM user_info" +
+	"	WHERE last_device_refresh < now() - interval '5 days' AND email = $1"
+const userInfoUpdRefresh = "UPDATE user_info SET last_device_refresh = now()" +
+	"	WHERE email = $1"
 
 const devicesInsStr = "INSERT INTO device (email, device_id, nickname)" +
 	"	VALUES ($1, $2, $3)"
@@ -127,18 +131,26 @@ func RefreshDevices(token string, db *sqlx.DB, rChan chan bool) {
 		db = Connect()
 	}
 	email := GetEmail(token)
-	devices := reddit_refresh.GetDevices(token)
-	_, err := db.Exec(devicesDelAllStr, email)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error deleting devices for %s", email)
+	user := []UserInfo{}
+	if err := db.Select(&user, userInfoCheckUpd, email); err != nil {
+		fmt.Fprintf(os.Stderr, "Error checking user info")
 	}
-	var wg sync.WaitGroup
-	wg.Add(len(devices))
-	for nickname, iden := range devices {
-		go AddDevice(email, iden, nickname, db, &wg)
+	if len(user) != 0 {
+		devices := reddit_refresh.GetDevices(token)
+		_, err := db.Exec(devicesDelAllStr, email)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error deleting devices for %s", email)
+		}
+		var wg sync.WaitGroup
+		wg.Add(len(devices))
+		for nickname, iden := range devices {
+			fmt.Println(nickname, iden)
+			go AddDevice(email, iden, nickname, db, &wg)
+		}
+		//wait for all AddDevice calls to exit
+		UpdateDeviceCheck(email, db)
+		wg.Wait()
 	}
-	//wait for all AddDevice calls to exit
-	wg.Wait()
 	if rChan != nil {
 		rChan <- true
 	}
@@ -358,6 +370,12 @@ func UpdateLastRes(email string, sub string, search string, url string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error updating (%s, %s, %s) to %s\n",
 			email, sub, search, url)
+	}
+}
+
+func UpdateDeviceCheck(email string, db *sqlx.DB) {
+	if _, err := db.Exec(userInfoUpdRefresh, email); err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating last_device_refresh for %s\n", email)
 	}
 }
 
