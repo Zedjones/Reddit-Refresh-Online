@@ -148,17 +148,25 @@ func RefreshDevices(token string, db *sqlx.DB, rChan chan bool) {
 	sqlStr = sqlx.Rebind(sqlx.DOLLAR, sqlStr)
 	//add last section about ignoring duplicate values in insert
 	sqlStr += devicesUpdMissingStr2
-	if _, err := db.Exec(sqlStr, vals...); err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating devices for %s\n", email)
-	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		if _, err := db.Exec(sqlStr, vals...); err != nil {
+			fmt.Fprintf(os.Stderr, "Error updating devices for %s\n", email)
+		}
+		wg.Done()
+	}()
 	sqlStr, vals, err := sqlx.In(devicesDelMissingStr, email, ids)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error constructing query to deleting missing devices\n")
 	}
 	sqlStr = sqlx.Rebind(sqlx.DOLLAR, sqlStr)
-	if _, err = db.Exec(sqlStr, vals...); err != nil {
-		fmt.Fprintf(os.Stderr, "Error removing old devices for %s\n", email)
-	}
+	go func() {
+		if _, err = db.Exec(sqlStr, vals...); err != nil {
+			fmt.Fprintf(os.Stderr, "Error removing old devices for %s\n", email)
+		}
+		wg.Done()
+	}()
 	//tell main routine that we're done
 	if rChan != nil {
 		rChan <- true
