@@ -167,6 +167,7 @@ func RefreshDevices(token string, db *sqlx.DB, rChan chan bool) {
 		}
 		wg.Done()
 	}()
+	wg.Wait()
 	//tell main routine that we're done
 	if rChan != nil {
 		rChan <- true
