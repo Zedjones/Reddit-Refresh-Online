@@ -12,7 +12,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
-	"../Reddit-Refresh-Go/reddit_refresh_go/reddit_refresh"
+	"github.com/zedjones/Reddit-Refresh-Go/reddit_refresh_go/reddit_refresh"
 )
 
 /*

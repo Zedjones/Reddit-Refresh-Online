@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"../Reddit-Refresh-Go/reddit_refresh_go/reddit_refresh"
+	"github.com/zedjones/Reddit-Refresh-Go/reddit_refresh_go/reddit_refresh"
 )
 
 //subChanMap maps searches to channels

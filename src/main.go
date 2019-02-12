@@ -11,7 +11,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 
-	"../RROnline"
+	"github.com/Zedjones/Reddit-Refresh-Online/RROnline"
 )
 
 const PUSH_URL = "https://www.pushbullet.com/authorize?client_id=" +
