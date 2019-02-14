@@ -10,14 +10,35 @@ import (
 	"strings"
 )
 
+type pushConfig struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+}
+
+const pushConfFile = "../PushSettings.json"
+
 //OAuthURL is the only proper way to name this ever though it doesn't need
 //to be exported
 const OAuthURL = "https://api.pushbullet.com/oauth2/token"
 const aboutURL = "https://www.reddit.com/%s/about.json"
 const userURL = "https://api.pushbullet.com/v2/users/me"
-const clientID = "PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1"
-const clientSecret = "VdoOJb5BVCPNjqD0b02dVrIVZzkVD2oY"
-const token = "o.OldUc0rKEAt9xhYaHpfeXlUksvVBNKzv"
+
+var pushConf pushConfig
+
+/*
+LoadPushConfig loads the configuration for the database from the settngs file
+specified by dbConfFile
+*/
+func LoadPushConfig() {
+	content, err := ioutil.ReadFile(pushConfFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading config file.\n")
+	}
+	pushConf = pushConfig{}
+	if err = json.Unmarshal(content, &pushConf); err != nil {
+		fmt.Fprintf(os.Stderr, "Error unmarshalling config file.\n")
+	}
+}
 
 /*
 ValidateSub checks if a subreddit exists
@@ -103,8 +124,8 @@ GetToken gets the user's Pushbullet access token given their OAuth token
 */
 func GetToken(token string) string {
 	dataMap := make(map[string]string)
-	dataMap["client_secret"] = clientSecret
-	dataMap["client_id"] = clientID
+	dataMap["client_secret"] = pushConf.ClientSecret
+	dataMap["client_id"] = pushConf.ClientID
 	dataMap["grant_type"] = "authorization_code"
 	dataMap["code"] = token
 	jsonBuf, err := json.Marshal(dataMap)

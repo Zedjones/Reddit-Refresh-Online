@@ -51,7 +51,8 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 }
 
 func main() {
-	RROnline.LoadConfig()
+	RROnline.LoadDBConfig()
+	RROnline.LoadPushConfig()
 	go startSearches()
 	e := echo.New()
 	e.Use(middleware.CSRF())

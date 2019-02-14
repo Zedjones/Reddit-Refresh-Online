@@ -90,16 +90,16 @@ result in the database to the new URL.
 */
 func checkResult(token string, sub string, search string, listen <-chan bool) {
 	email := GetEmail(token)
-	interval := GetInterval(email)
 	for {
+		interval := GetInterval(email)
 		oldResult := GetLastRes(email, sub, search)
 		newResult := reddit_refresh.GetResult(sub, search)
 		if oldResult != newResult.Url {
 			devices := GetDevices(email, nil)
 			for _, device := range devices {
 				reddit_refresh.SendPushLink(device.DeviceID, token, newResult)
-				UpdateLastRes(email, sub, search, newResult.Url)
 			}
+			UpdateLastRes(email, sub, search, newResult.Url)
 		}
 		//either we get a value over the channel or the temporary timeout
 		//channel returns

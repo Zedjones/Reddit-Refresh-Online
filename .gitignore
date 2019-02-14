@@ -2,5 +2,5 @@ target
 *.code-workspace
 .vscode
 .env
-*password
-*username
+DBSettings.json
+PushSettings.json

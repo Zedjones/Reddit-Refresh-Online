@@ -51,7 +51,7 @@ type dbConfig struct {
 	DB   string `json:"db"`
 }
 
-const confFile = "../Settings.json"
+const dbConfFile = "../DBSettings.json"
 const connStr = "postgres://%s:%s@traphouse.us/%s"
 
 //DefaultInterval is the default interval for a user when first created
@@ -92,19 +92,19 @@ const devicesUpdMissingStr1 = "INSERT INTO device (email, device_id, nickname) V
 const devicesUpdMissingStr2 = "		ON CONFLICT (device_id) DO NOTHING"
 const devicesDelAllStr = "DELETE FROM device WHERE email = $1"
 
-var config dbConfig
+var dbConf dbConfig
 
 /*
-LoadConfig loads the configuration for the database from the settngs file
-specified by confFile
+LoadDBConfig loads the configuration for the database from the settngs file
+specified by dbConfFile
 */
-func LoadConfig() {
-	content, err := ioutil.ReadFile(confFile)
+func LoadDBConfig() {
+	content, err := ioutil.ReadFile(dbConfFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading config file.\n")
 	}
-	config = dbConfig{}
-	if err = json.Unmarshal(content, &config); err != nil {
+	dbConf = dbConfig{}
+	if err = json.Unmarshal(content, &dbConf); err != nil {
 		fmt.Fprintf(os.Stderr, "Error unmarshalling config file.\n")
 	}
 }
@@ -114,7 +114,7 @@ Connect returns a sqlx database connection for the database
 */
 func Connect() *sqlx.DB {
 	_ = pq.Efatal //weird fix for bug with pq
-	fullConStr := fmt.Sprintf(connStr, config.User, config.Pass, config.DB)
+	fullConStr := fmt.Sprintf(connStr, dbConf.User, dbConf.Pass, dbConf.DB)
 	db, err := sqlx.Open("postgres", fullConStr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error connecting to PGSQL DB.\n")
