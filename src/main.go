@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo"
@@ -14,11 +15,11 @@ import (
 	"github.com/Zedjones/Reddit-Refresh-Online/RROnline"
 )
 
-const PUSH_URL = "https://www.pushbullet.com/authorize?client_id=" +
-	"PR0sGjjxNmfu8OwRrawv2oxgZllvsDm1&redirect_uri=http%3A%2F%2F" +
-	"localhost%3A1234%2Fhandle_token&response_type=code&scope=everything"
+const pushURLTemplate = "https://www.pushbullet.com/authorize?client_id=%s" +
+	"&redirect_uri=%s&response_type=code&scope=everything"
 
 var routineManager RROnline.RoutineManager
+var pushURL string
 
 type isValid struct {
 	IsValid bool `json:"valid"`
@@ -53,6 +54,7 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 func main() {
 	RROnline.LoadDBConfig()
 	RROnline.LoadPushConfig()
+	getPushURL()
 	go startSearches()
 	e := echo.New()
 	e.Use(middleware.CSRF())
@@ -70,6 +72,12 @@ func main() {
 	e.POST("/addSearch", addSearch)
 	e.POST("/deleteSub", deleteSub)
 	e.Start(":1234")
+}
+
+func getPushURL() {
+	redirectURI := strings.Replace(RROnline.PushConf.RedirectURI, ":", "%3A", -1)
+	redirectURI = strings.Replace(redirectURI, "/", "%2F", -1)
+	pushURL = fmt.Sprintf(pushURLTemplate, RROnline.PushConf.ClientID, redirectURI)
 }
 
 func startSearches() {
@@ -129,7 +137,7 @@ func index(c echo.Context) error {
 	data := make(map[string]interface{})
 	if err != nil {
 		data["login"] = "Login"
-		data["url"] = PUSH_URL
+		data["url"] = pushURL
 		return c.Render(http.StatusOK, "index.html", data)
 	}
 	name := RROnline.GetUserName(userToken.Value)

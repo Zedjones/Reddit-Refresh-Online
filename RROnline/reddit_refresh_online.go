@@ -13,6 +13,7 @@ import (
 type pushConfig struct {
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
+	RedirectURI  string `json:"redirect_uri"`
 }
 
 const pushConfFile = "../PushSettings.json"
@@ -23,7 +24,8 @@ const OAuthURL = "https://api.pushbullet.com/oauth2/token"
 const aboutURL = "https://www.reddit.com/%s/about.json"
 const userURL = "https://api.pushbullet.com/v2/users/me"
 
-var pushConf pushConfig
+//PushConf defines the configuration for all Pushbullet related things
+var PushConf pushConfig
 
 /*
 LoadPushConfig loads the configuration for the database from the settngs file
@@ -34,8 +36,8 @@ func LoadPushConfig() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading config file.\n")
 	}
-	pushConf = pushConfig{}
-	if err = json.Unmarshal(content, &pushConf); err != nil {
+	PushConf = pushConfig{}
+	if err = json.Unmarshal(content, &PushConf); err != nil {
 		fmt.Fprintf(os.Stderr, "Error unmarshalling config file.\n")
 	}
 }
@@ -124,8 +126,8 @@ GetToken gets the user's Pushbullet access token given their OAuth token
 */
 func GetToken(token string) string {
 	dataMap := make(map[string]string)
-	dataMap["client_secret"] = pushConf.ClientSecret
-	dataMap["client_id"] = pushConf.ClientID
+	dataMap["client_secret"] = PushConf.ClientSecret
+	dataMap["client_id"] = PushConf.ClientID
 	dataMap["grant_type"] = "authorization_code"
 	dataMap["code"] = token
 	jsonBuf, err := json.Marshal(dataMap)
