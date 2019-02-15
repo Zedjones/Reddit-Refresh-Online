@@ -134,35 +134,35 @@ func RefreshDevices(token string, db *sqlx.DB, rChan chan bool) {
 	email := GetEmail(token)
 	devices := reddit_refresh.GetDevices(token)
 	//first part of string, before values
-	sqlStr := devicesUpdMissingStr1
-	vals := []interface{}{}
+	insStr := devicesUpdMissingStr1
+	insVals := []interface{}{}
 	ids := []string{}
 	//add each value to the args... and the sqlStr
 	for nickname, iden := range devices {
-		sqlStr += "(?, ?, ?),"
-		vals = append(vals, email, iden, nickname)
+		insStr += "(?, ?, ?),"
+		insVals = append(insVals, email, iden, nickname)
 		ids = append(ids, iden)
 	}
-	sqlStr = strings.TrimSuffix(sqlStr, ",")
+	insStr = strings.TrimSuffix(insStr, ",")
 	//change ? into $n
-	sqlStr = sqlx.Rebind(sqlx.DOLLAR, sqlStr)
+	insStr = sqlx.Rebind(sqlx.DOLLAR, insStr)
 	//add last section about ignoring duplicate values in insert
-	sqlStr += devicesUpdMissingStr2
+	insStr += devicesUpdMissingStr2
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
-		if _, err := db.Exec(sqlStr, vals...); err != nil {
-			fmt.Fprintf(os.Stderr, "Error updating devices for %s\n", email)
+		if _, err := db.Exec(insStr, insVals...); err != nil {
+			fmt.Fprintf(os.Stderr, "Error updating devices for %s\n", err)
 		}
 		wg.Done()
 	}()
-	sqlStr, vals, err := sqlx.In(devicesDelMissingStr, email, ids)
+	rmStr, delVals, err := sqlx.In(devicesDelMissingStr, email, ids)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error constructing query to deleting missing devices\n")
 	}
-	sqlStr = sqlx.Rebind(sqlx.DOLLAR, sqlStr)
+	rmStr = sqlx.Rebind(sqlx.DOLLAR, rmStr)
 	go func() {
-		if _, err = db.Exec(sqlStr, vals...); err != nil {
+		if _, err = db.Exec(rmStr, delVals...); err != nil {
 			fmt.Fprintf(os.Stderr, "Error removing old devices for %s\n", email)
 		}
 		wg.Done()
