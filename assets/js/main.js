@@ -114,7 +114,7 @@ function confirmSearch() {
     addSearchToPage(subname, searchList);
     csrfToken = getCookie("_csrf");
     var req = new XMLHttpRequest();
-    postUrl = "http://localhost:1234/addSearch";
+    postUrl = "/addSearch";
     req.open("POST", postUrl, true);
     req.setRequestHeader('X-CSRF-Token', csrfToken);
     req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
@@ -196,7 +196,7 @@ function addEditEventListeners(subname, searchList, icon) {
                 };
                 csrfToken = getCookie("_csrf");
                 var req = new XMLHttpRequest();
-                postUrl = "http://localhost:1234/deleteSub";
+                postUrl = "/deleteSub";
                 req.open("POST", postUrl, true);
                 req.setRequestHeader('X-CSRF-Token', csrfToken);
                 req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
@@ -268,7 +268,7 @@ function updateSearch(editButton) {
     };
     csrfToken = getCookie("_csrf");
     var req = new XMLHttpRequest();
-    postUrl = "http://localhost:1234/addSearch";
+    postUrl = "/addSearch";
     req.open("POST", postUrl, true);
     req.setRequestHeader('X-CSRF-Token', csrfToken);
     req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
