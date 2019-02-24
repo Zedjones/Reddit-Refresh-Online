@@ -62,8 +62,7 @@ func ValidateSub(sub string) bool {
 	body, _ := ioutil.ReadAll(resp.Body)
 	var result map[string]interface{}
 	json.Unmarshal(body, &result)
-	url, ok := result["data"].(map[string]interface{})["url"].(string)
-	if ok {
+	if _, ok := result["data"].(map[string]interface{}); ok {
 		return true
 	}
 	return false
