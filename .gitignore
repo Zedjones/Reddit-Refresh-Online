@@ -2,5 +2,6 @@ target
 *.code-workspace
 .vscode
 .env
-DBSettings.json
-PushSettings.json
+*.json
+*.sum
+src/src
