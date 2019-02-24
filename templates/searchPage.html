@@ -17,7 +17,7 @@
 <body>
 <nav>
     <div class="nav-wrapper">
-        <a href="#!" class="brand-logo">Refresh</a>
+        <a href="/" class="brand-logo">Refresh</a>
         <a href="#" data-target="mobile-demo" class="sidenav-trigger"><i class="material-icons">menu</i></a>
         <ul class="right hide-on-med-and-down">
             <li><a href="#">{{index . "name"}}</a></li>
@@ -43,6 +43,13 @@
 
 
 <div class="container div-search">
+    <h4>Refresh Interval (Minutes) </h4>
+
+    <div class="input-field col s12">
+        <i class="material-icons prefix">autorenew</i>
+        <input id="interval_input" type="number" min=".5" step=".1" class="validate" placeholder=10 onfocusout="editInterval()">
+    </div>
+
     <h4>Devices</h4>
 
     <div class="input-field col s12">
@@ -78,7 +85,9 @@
 
 <script src="assets/js/main.js"></script>
 
+<!--Add subreddits and searches to page on the client-side and prefill interval input-->
 <script>
+    document.getElementById("interval_input").value = {{index . "interval"}};
     {{range $sub, $searches := index . "searches"}}
         addSearchToPage({{$sub}}, {{$searches}})
     {{end}}

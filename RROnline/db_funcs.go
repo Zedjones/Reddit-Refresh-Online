@@ -80,6 +80,8 @@ const userInfoInsStr = "INSERT INTO user_info (email, access_token)" +
 	"	VALUES ($1, $2)"
 const userInfoUpdStr = "UPDATE user_info SET access_token = $1" +
 	"	WHERE email = $2"
+const userInfoUpdInt = "UPDATE user_info SET interval_min = $1" +
+	"	WHERE email = $2"
 
 const devicesInsStr = "INSERT INTO device (email, device_id, nickname)" +
 	"	VALUES ($1, $2, $3)"
@@ -130,6 +132,7 @@ db is the database to use for connection, or nil
 func RefreshDevices(token string, db *sqlx.DB, rChan chan bool) {
 	if db == nil {
 		db = Connect()
+		defer db.Close()
 	}
 	email := GetEmail(token)
 	devices := reddit_refresh.GetDevices(token)
@@ -181,6 +184,7 @@ db is the database to use for connection, or nil
 func GetDevices(email string, db *sqlx.DB) []Device {
 	if db == nil {
 		db = Connect()
+		defer db.Close()
 	}
 	devices := []Device{}
 	err := db.Select(&devices, devicesQueryStr, email)
@@ -202,6 +206,7 @@ func AddDevice(email string, deviceID string, nickname string, db *sqlx.DB, wg *
 	defer wg.Done()
 	if db == nil {
 		db = Connect()
+		defer db.Close()
 	}
 	_, err := db.Exec(devicesInsStr, email, deviceID, nickname)
 	if err != nil {
@@ -218,6 +223,7 @@ NOTE: we don't need the email since each device ID is unique
 */
 func DeleteDevice(deviceID string) {
 	db := Connect()
+	defer db.Close()
 	_, err := db.Exec(devicesDelStr, deviceID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error deleting device %s\n", deviceID)
@@ -229,6 +235,7 @@ GetAllSearches gets every search from the database, used at program startup
 */
 func GetAllSearches() []Search {
 	db := Connect()
+	defer db.Close()
 	searches := []Search{}
 	err := db.Select(&searches, searchQueryAllStr)
 	if err != nil {
@@ -244,6 +251,7 @@ db is the database to use for connection, or nil
 func GetSearches(email string, db *sqlx.DB) []Search {
 	if db == nil {
 		db = Connect()
+		defer db.Close()
 	}
 	searches := []Search{}
 	err := db.Select(&searches, searchQueryStr, email)
@@ -275,6 +283,7 @@ searches is a slice containing the new searches
 */
 func DeleteMissingSearches(email string, sub string, searches []string, rm RoutineManager) error {
 	db := Connect()
+	defer db.Close()
 	//create query to get missing searches
 	query, args, err := sqlx.In(searchQueryMissingStr, email, sub, searches)
 	query = sqlx.Rebind(sqlx.DOLLAR, query)
@@ -303,6 +312,7 @@ DeleteSub deletes all the searches in the database for a given user and subreddi
 */
 func DeleteSub(email string, sub string, rm RoutineManager) error {
 	db := Connect()
+	defer db.Close()
 	_, err := db.Exec(searchDelSubStr, email, sub)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error deleting sub (%s, %s)\n",
@@ -318,6 +328,7 @@ AddSearch adds a single search to the DB for a given user and subreddit
 */
 func AddSearch(token string, email string, sub string, search string, rm RoutineManager) {
 	db := Connect()
+	defer db.Close()
 	_, err := db.Exec(searchInsStr, email, sub, search, "")
 	if err != nil {
 		if err.Error() != dupSearchErr {
@@ -333,6 +344,7 @@ UserExists checks whether or not a user exists in the database
 */
 func UserExists(email string) bool {
 	db := Connect()
+	defer db.Close()
 	users := []UserInfo{}
 	err := db.Select(&users, userInfoQueryStr, email)
 	if err != nil {
@@ -346,6 +358,7 @@ GetInterval gets the refresh interval for a given user
 */
 func GetInterval(email string) float32 {
 	db := Connect()
+	defer db.Close()
 	users := []UserInfo{}
 	err := db.Select(&users, userInfoQueryStr, email)
 	if err != nil || len(users) == 0 {
@@ -355,11 +368,23 @@ func GetInterval(email string) float32 {
 }
 
 /*
+UpdateInterval updates the refresh interval for a given user
+*/
+func UpdateInterval(email string, interval float32) {
+	db := Connect()
+	defer db.Close()
+	if _, err := db.Exec(userInfoUpdInt, interval, email); err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating interval for %s to %f\n", email, interval)
+	}
+}
+
+/*
 GetUserToken gets a user's Pushbullet access token from the database,
 mostly used for starting threads when the application reboots
 */
 func GetUserToken(email string) string {
 	db := Connect()
+	defer db.Close()
 	users := []UserInfo{}
 	err := db.Select(&users, userInfoQueryStr, email)
 	if err != nil || len(users) == 0 {
@@ -373,6 +398,7 @@ UpdateUserToken updates a user's access token in the database
 */
 func UpdateUserToken(email string, token string) {
 	db := Connect()
+	defer db.Close()
 	_, err := db.Exec(userInfoUpdStr, token, email)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error updating %s to %s\n", email, token)
@@ -384,6 +410,7 @@ UpdateLastRes updates the last result URL for a search for a given user
 */
 func UpdateLastRes(email string, sub string, search string, url string) {
 	db := Connect()
+	defer db.Close()
 	_, err := db.Exec(searchUpdStr, url, email, sub, search)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error updating (%s, %s, %s) to %s\n",
@@ -397,6 +424,7 @@ AddUser adds a user to the database given their interval and token
 func AddUser(email string, token string, db *sqlx.DB) {
 	if db == nil {
 		db = Connect()
+		defer db.Close()
 	}
 	_, err := db.Exec(userInfoInsStr, email, token)
 	if err != nil {

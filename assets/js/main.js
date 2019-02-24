@@ -123,6 +123,20 @@ function confirmSearch() {
     modal.close();
 }
 
+function editInterval() {
+    var interval = Number(document.getElementById("interval_input").value).toFixed(8)
+    let intervalJSON = {
+        "interval": parseFloat(interval)
+    };
+    csrfToken = getCookie("_csrf");
+    var req = new XMLHttpRequest();
+    postUrl = "/updateInterval";
+    req.open("POST", postUrl, true);
+    req.setRequestHeader('X-CSRF-Token', csrfToken);
+    req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+    req.send(JSON.stringify(intervalJSON));
+}
+
 // addSearchToPage formats the search data and adds it to the page
 function addSearchToPage(subname, searchList) {
     // build output

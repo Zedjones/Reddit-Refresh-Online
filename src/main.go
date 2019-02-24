@@ -47,6 +47,10 @@ type Sub struct {
 	Sub string `json:"subreddit"`
 }
 
+type Interval struct {
+	Interval float32 `json:"interval"`
+}
+
 func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
 	return t.templates.ExecuteTemplate(w, name, data)
 }
@@ -64,13 +68,13 @@ func main() {
 	}
 	e.Renderer = renderer
 	e.Static("/", "..")
-	e.POST("/validateSubreddit", validateRoute)
 	e.GET("/handle_token", handleToken)
 	e.GET("/", index)
-	e.GET("/gettingStarted", gettingStarted)
 	e.GET("/searchPage", mainPage)
 	e.POST("/addSearch", addSearch)
 	e.POST("/deleteSub", deleteSub)
+	e.POST("/updateInterval", updateInterval)
+	e.POST("/validateSubreddit", validateRoute)
 	e.Start(":1234")
 }
 
@@ -87,6 +91,20 @@ func startSearches() {
 		token := RROnline.GetUserToken(item.Email)
 		routineManager.RMAddSearch(token, item.Sub, item.Search)
 	}
+}
+
+func updateInterval(c echo.Context) error {
+	interval := new(Interval)
+	if err := c.Bind(interval); err != nil {
+		fmt.Fprintln(os.Stderr, "Error binding JSON body to interval.")
+	}
+	userToken, err := c.Cookie("user_token")
+	if err != nil {
+		return c.Redirect(http.StatusFound, "/")
+	}
+	email := RROnline.GetEmail(userToken.Value)
+	RROnline.UpdateInterval(email, interval.Interval)
+	return c.NoContent(http.StatusOK)
 }
 
 func validateRoute(c echo.Context) error {
@@ -146,10 +164,6 @@ func index(c echo.Context) error {
 	return c.Render(http.StatusOK, "index.html", data)
 }
 
-func gettingStarted(c echo.Context) error {
-	return c.Render(http.StatusOK, "gettingStarted.html", nil)
-}
-
 func mainPage(c echo.Context) error {
 	userToken, err := c.Cookie("user_token")
 	if err != nil {
@@ -161,6 +175,7 @@ func mainPage(c echo.Context) error {
 	name := RROnline.GetUserName(userToken.Value)
 	email := RROnline.GetEmail(userToken.Value)
 	searches := RROnline.GetSearches(email, db)
+	interval := RROnline.GetInterval(email)
 	searchMap := make(map[string][]string)
 	for _, search := range searches {
 		if _, ok := searchMap[search.Sub]; ok {
@@ -175,6 +190,7 @@ func mainPage(c echo.Context) error {
 	data["name"] = name
 	data["searches"] = searchMap
 	data["devices"] = devices
+	data["interval"] = interval
 	data["inc"] = func(i int) int {
 		return i + 1
 	}
@@ -197,7 +213,7 @@ func addSearch(c echo.Context) error {
 	}
 	RROnline.DeleteMissingSearches(email, searches.Sub,
 		searches.Searches, routineManager)
-	return nil
+	return c.NoContent(http.StatusOK)
 }
 
 func deleteSub(c echo.Context) error {
