@@ -5,3 +5,4 @@ target
 *.json
 *.sum
 src/main
+src/src
