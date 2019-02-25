@@ -118,6 +118,17 @@ function confirmSearch() {
     req.open("POST", postUrl, true);
     req.setRequestHeader('X-CSRF-Token', csrfToken);
     req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
+    req.onreadystatechange = () => {
+        if (req.readyState == 4 && req.status == 200) {
+            M.toast({html: `Successfully added ${obj.subreddit}!`})
+        }
+    }
+
+    req.onerror = () => {
+        M.toast({html: `Failed to add ${obj.subreddit}, please try again.`})
+    }
+
     req.send(JSON.stringify(obj));
     console.log(JSON.stringify(obj));
     modal.close();
@@ -134,6 +145,17 @@ function editInterval() {
     req.open("POST", postUrl, true);
     req.setRequestHeader('X-CSRF-Token', csrfToken);
     req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
+    req.onreadystatechange = () => {
+        if (req.readyState == 4 && req.status == 200) {
+            M.toast({html: `Successfully changed interval to ${intervalJSON.interval}!`})
+        }
+    }
+
+    req.onerror = () => {
+        M.toast({html: "Failed to change interval, please try again."})
+    }
+
     req.send(JSON.stringify(intervalJSON));
 }
 
@@ -214,6 +236,17 @@ function addEditEventListeners(subname, searchList, icon) {
                 req.open("POST", postUrl, true);
                 req.setRequestHeader('X-CSRF-Token', csrfToken);
                 req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
+                req.onreadystatechange = () => {
+                    if (req.readyState == 4 && req.status == 200) {
+                        M.toast({html: `Successfully deleted ${obj.subreddit}!`})
+                    }
+                }
+
+                req.onerror = () => {
+                    M.toast({html: `Failed to delete ${obj.subreddit}, please try again.`})
+                }
+
                 req.send(JSON.stringify(obj));
                 icon.parentElement.parentElement.remove();
                 modal.close();
@@ -286,6 +319,17 @@ function updateSearch(editButton) {
     req.open("POST", postUrl, true);
     req.setRequestHeader('X-CSRF-Token', csrfToken);
     req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
+    req.onreadystatechange = () => {
+        if (req.readyState == 4 && req.status == 200) {
+            M.toast({html: `Successfully modified ${obj.subreddit}!`})
+        }
+    }
+
+    req.onerror = () => {
+        M.toast({html: `Failed to modify ${obj.subreddit}, please try again.`})
+    }
+
     req.send(JSON.stringify(obj));
     console.log(JSON.stringify(obj));
     searchCount = 0;
