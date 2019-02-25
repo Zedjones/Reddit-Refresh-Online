@@ -136,6 +136,9 @@ function confirmSearch() {
 
 function editInterval() {
     var interval = Number(document.getElementById("interval_input").value).toFixed(8)
+    if (interval < .5) {
+        return;
+    }
     let intervalJSON = {
         "interval": parseFloat(interval)
     };
