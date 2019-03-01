@@ -2,6 +2,7 @@ let modal = null;
 let modalContent = null;
 let searchCount=0;
 let valid = false;
+let currDevices = []
 // Get Modal instance
 document.addEventListener('DOMContentLoaded', function() {
     let modalElement = document.querySelectorAll('.modal');
@@ -160,6 +161,24 @@ function editInterval() {
     }
 
     req.send(JSON.stringify(intervalJSON));
+}
+
+function editDevices() {
+    var devices = document.getElementById("devices");
+    Array.from(devices.children).forEach(device => {
+        console.log(device.id, device.selected);
+    });
+    console.log(currDevices);
+}
+
+function initDevices() {
+    var devices = document.getElementById("devices");
+    Array.from(devices.children).forEach(device => {
+        currDevices.push({
+            id: device.id,
+            active: device.selected
+        })
+    });
 }
 
 // addSearchToPage formats the search data and adds it to the page

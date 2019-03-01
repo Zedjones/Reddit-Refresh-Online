@@ -53,15 +53,15 @@
     <h4>Devices</h4>
 
     <div class="input-field col s12">
-        <select multiple>
+        <select multiple id="devices" onchange="editDevices()">
             <!--<option value="" disabled selected>Choose your option</option>-->
             {{$inc := index . "inc"}}
             {{range $ind, $val := index . "devices"}}
                 {{$ind = call $inc $ind}}
                 {{if eq $val.Active true}}
-                    <option value="{{call $inc $ind}}" selected>{{$val.Nickname}}</option>
+                    <option id={{$val.DeviceID}} value="{{call $inc $ind}}" selected>{{$val.Nickname}}</option>
                 {{else}}
-                    <option value="{{call $inc $ind}}">{{$val.Nickname}}</option>
+                    <option id={{$val.DeviceID}} value="{{call $inc $ind}}">{{$val.Nickname}}</option>
                 {{end}}
             {{end}}
         </select>
@@ -91,6 +91,7 @@
     {{range $sub, $searches := index . "searches"}}
         addSearchToPage({{$sub}}, {{$searches}})
     {{end}}
+    initDevices();
 </script>
 
 </body>
