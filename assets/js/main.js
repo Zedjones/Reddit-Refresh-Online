@@ -165,10 +165,19 @@ function editInterval() {
 
 function editDevices() {
     var devices = document.getElementById("devices");
+    var newDevices = [];
     Array.from(devices.children).forEach(device => {
-        console.log(device.id, device.selected);
+        newDevices.push({
+            id: device.id, 
+            active: device.selected
+        })
     });
-    console.log(currDevices);
+    for (let i = 0; i < newDevices.length; i++) {
+        if (newDevices[i].active != currDevices[i].active) {
+            console.log(newDevices[i])
+        }
+    }
+    currDevices = newDevices;
 }
 
 function initDevices() {
