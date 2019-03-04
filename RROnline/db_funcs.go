@@ -93,6 +93,8 @@ const devicesDelMissingStr = "DELETE FROM device WHERE email = ?" +
 const devicesUpdMissingStr1 = "INSERT INTO device (email, device_id, nickname) VALUES "
 const devicesUpdMissingStr2 = "		ON CONFLICT (device_id) DO NOTHING"
 const devicesDelAllStr = "DELETE FROM device WHERE email = $1"
+const devicesUpdActive = "UPDATE device SET active = $1" +
+	"	WHERE device_id = $2"
 
 var dbConf dbConfig
 
@@ -227,6 +229,14 @@ func DeleteDevice(deviceID string) {
 	_, err := db.Exec(devicesDelStr, deviceID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error deleting device %s\n", deviceID)
+	}
+}
+
+func UpdateDevice(deviceID string, active bool) {
+	db := Connect()
+	defer db.Close()
+	if _, err := db.Exec(devicesUpdActive, active, deviceID); err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating device %s to %t\n", deviceID, active)
 	}
 }
 

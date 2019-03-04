@@ -169,12 +169,34 @@ function editDevices() {
     Array.from(devices.children).forEach(device => {
         newDevices.push({
             id: device.id, 
+            name: device.text,
             active: device.selected
         })
     });
     for (let i = 0; i < newDevices.length; i++) {
         if (newDevices[i].active != currDevices[i].active) {
-            console.log(newDevices[i])
+            let obj = {
+                id: newDevices[i].id, 
+                active: newDevices[i].active
+            };
+            csrfToken = getCookie("_csrf");
+            var req = new XMLHttpRequest();
+            postUrl = "/editDevice";
+            req.open("POST", postUrl, true);
+            req.setRequestHeader('X-CSRF-Token', csrfToken);
+            req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
+            req.onreadystatechange = () => {
+                if (req.readyState == 4 && req.status == 200) {
+                    M.toast({html: `Successfully edited ${newDevices[i].name}!`})
+                }
+            }
+
+            req.onerror = () => {
+                M.toast({html: `Failed to edit ${newDevices[i].name}, please try again.`})
+            }
+
+            req.send(JSON.stringify(obj));
         }
     }
     currDevices = newDevices;
@@ -185,9 +207,11 @@ function initDevices() {
     Array.from(devices.children).forEach(device => {
         currDevices.push({
             id: device.id,
+            name: device.text,
             active: device.selected
         })
     });
+    devices.addEventListener('change', editDevices);
 }
 
 // addSearchToPage formats the search data and adds it to the page

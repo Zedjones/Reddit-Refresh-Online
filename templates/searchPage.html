@@ -53,7 +53,7 @@
     <h4>Devices</h4>
 
     <div class="input-field col s12">
-        <select multiple id="devices" onchange="editDevices()">
+        <select multiple id="devices">
             <!--<option value="" disabled selected>Choose your option</option>-->
             {{$inc := index . "inc"}}
             {{range $ind, $val := index . "devices"}}

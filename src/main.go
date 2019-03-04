@@ -43,6 +43,11 @@ type Search struct {
 	Search string `json:"search"`
 }
 
+type Device struct {
+	ID     string `json:"id"`
+	Active bool   `json:"active"`
+}
+
 type Sub struct {
 	Sub string `json:"subreddit"`
 }
@@ -75,6 +80,7 @@ func main() {
 	e.POST("/deleteSub", deleteSub)
 	e.POST("/updateInterval", updateInterval)
 	e.POST("/validateSubreddit", validateRoute)
+	e.POST("/editDevice", editDevice)
 	e.Start(":1234")
 }
 
@@ -104,6 +110,18 @@ func updateInterval(c echo.Context) error {
 	}
 	email := RROnline.GetEmail(userToken.Value)
 	RROnline.UpdateInterval(email, interval.Interval)
+	return c.NoContent(http.StatusOK)
+}
+
+func editDevice(c echo.Context) error {
+	device := new(Device)
+	if err := c.Bind(device); err != nil {
+		fmt.Fprintln(os.Stderr, "Error binding JSON body to device.")
+	}
+	if _, err := c.Cookie("user_token"); err != nil {
+		return c.Redirect(http.StatusFound, "/")
+	}
+	RROnline.UpdateDevice(device.ID, device.Active)
 	return c.NoContent(http.StatusOK)
 }
 
