@@ -7,22 +7,22 @@ PUSH_FILE = "PushSettings.json"
 
 def get_push_settings():
     push_dict = OrderedDict()
-    client_id = input("Enter Pushbullet client id: ")
+    client_id = input("Enter Pushbullet client id: ").strip()
     push_dict["client_id"] = client_id 
-    client_secret = input("Enter Pushbullet client secret: ")
+    client_secret = input("Enter Pushbullet client secret: ").strip()
     push_dict["client_secret"] = client_secret
-    redirect_uri = input("Enter Pushbullet redirect URI: ")
+    redirect_uri = input("Enter Pushbullet redirect URI: ").strip()
     push_dict["redirect_uri"] = redirect_uri
     with open(PUSH_FILE, 'w') as push_file:
         push_file.write(json.dumps(push_dict, indent=4))
 
 def get_db_settings():
     db_dict = OrderedDict()
-    user = input("Enter database username: ")
+    user = input("Enter database username: ").strip()
     db_dict["username"] = user
-    password = input("Enter database password: ")
+    password = input("Enter database password: ").strip()
     db_dict["password"] = password 
-    db_name = input("Please enter database name: ")
+    db_name = input("Please enter database name: ").strip()
     db_dict["db"] = db_name
     print(json.dumps(db_dict, indent=4))
     with open(DB_FILE, 'w') as db_file:
