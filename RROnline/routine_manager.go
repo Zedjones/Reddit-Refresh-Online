@@ -91,11 +91,20 @@ result in the database to the new URL.
 func checkResult(token string, sub string, search string, listen <-chan bool) {
 	email := GetEmail(token)
 	for {
-		interval := GetInterval(email)
-		oldResult := GetLastRes(email, sub, search)
+		interval, err := GetInterval(email)
+		if err != nil {
+			//TODO: Logging
+		}
+		oldResult, err := GetLastRes(email, sub, search)
+		if err != nil {
+			//TODO: Logging
+		}
 		newResult := reddit_refresh.GetResult(sub, search)
 		if oldResult != newResult.Url {
-			devices := GetDevices(email, nil)
+			devices, err := GetDevices(email, nil)
+			if err != nil {
+				//TODO: Logging
+			}
 			for _, device := range devices {
 				if device.Active {
 					reddit_refresh.SendPushLink(device.DeviceID, token, newResult)
@@ -121,9 +130,15 @@ send a push or update the link in the database
 */
 func checkResultTesting(token string, sub string, search string, listen <-chan bool) {
 	email := GetEmail(token)
-	interval := GetInterval(email)
+	interval, err := GetInterval(email)
+	if err != nil {
+		fmt.Printf(err.err, err.reason)
+	}
 	for {
-		oldResult := GetLastRes(email, sub, search)
+		oldResult, err := GetLastRes(email, sub, search)
+		if err != nil {
+			fmt.Printf(err.err, err.reason)
+		}
 		newResult := reddit_refresh.GetResult(sub, search)
 		fmt.Println(oldResult, newResult)
 		select {
