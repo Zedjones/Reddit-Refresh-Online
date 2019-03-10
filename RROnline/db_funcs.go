@@ -2,7 +2,6 @@ package RROnline
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -49,6 +48,16 @@ type dbConfig struct {
 	User string `json:"username"`
 	Pass string `json:"password"`
 	DB   string `json:"db"`
+}
+
+/*
+DBError defines the basic error type for database operations
+err is the operation that the error occurred on
+reason is the reason this error occurred
+*/
+type DBError struct {
+	err    string
+	reason string
 }
 
 const dbConfFile = "../DBSettings.json"
@@ -102,28 +111,29 @@ var dbConf dbConfig
 LoadDBConfig loads the configuration for the database from the settngs file
 specified by dbConfFile
 */
-func LoadDBConfig() {
+func LoadDBConfig() *DBError {
 	content, err := ioutil.ReadFile(dbConfFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading config file.\n")
+		return &DBError{"Error reading config file.\n", err.Error()}
 	}
 	dbConf = dbConfig{}
 	if err = json.Unmarshal(content, &dbConf); err != nil {
-		fmt.Fprintf(os.Stderr, "Error unmarshalling config file.\n")
+		return &DBError{"Error unmarshalling config file.\n", err.Error()}
 	}
+	return nil
 }
 
 /*
 Connect returns a sqlx database connection for the database
 */
-func Connect() *sqlx.DB {
+func Connect() (*sqlx.DB, *DBError) {
 	_ = pq.Efatal //weird fix for bug with pq
 	fullConStr := fmt.Sprintf(connStr, dbConf.User, dbConf.Pass, dbConf.DB)
 	db, err := sqlx.Open("postgres", fullConStr)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error connecting to PGSQL DB.\n")
+		return nil, &DBError{"Error connecting to PGSQL DB.\n", err.Error()}
 	}
-	return db
+	return db, nil
 }
 
 /*
@@ -131,9 +141,14 @@ RefreshDevices refreshes the user's devices in the database
 token is the user's Pushbullet API token
 db is the database to use for connection, or nil
 */
-func RefreshDevices(token string, db *sqlx.DB, rChan chan bool) {
+func RefreshDevices(token string, db *sqlx.DB, rChan chan *DBError) {
+	errors := ""
+	reasons := ""
 	if db == nil {
-		db = Connect()
+		db, err := Connect()
+		if err != nil {
+			rChan <- err
+		}
 		defer db.Close()
 	}
 	email := GetEmail(token)
@@ -157,7 +172,8 @@ func RefreshDevices(token string, db *sqlx.DB, rChan chan bool) {
 	wg.Add(2)
 	go func() {
 		if _, err := db.Exec(insStr, insVals...); err != nil {
-			fmt.Fprintf(os.Stderr, "Error updating devices for %s\n", err)
+			errors += fmt.Sprintf("Error updating devices for %s\n", email)
+			reasons += err.Error() + "\n"
 		}
 		wg.Done()
 	}()
@@ -168,14 +184,19 @@ func RefreshDevices(token string, db *sqlx.DB, rChan chan bool) {
 	rmStr = sqlx.Rebind(sqlx.DOLLAR, rmStr)
 	go func() {
 		if _, err = db.Exec(rmStr, delVals...); err != nil {
-			fmt.Fprintf(os.Stderr, "Error removing old devices for %s\n", email)
+			errors += fmt.Sprintf("Error removing old devices for %s\n", email)
+			reasons += err.Error() + "\n"
 		}
 		wg.Done()
 	}()
 	wg.Wait()
 	//tell main routine that we're done
 	if rChan != nil {
-		rChan <- true
+		if errors != "" {
+			rChan <- &DBError{errors, reasons}
+		} else {
+			rChan <- nil
+		}
 	}
 }
 
@@ -183,17 +204,21 @@ func RefreshDevices(token string, db *sqlx.DB, rChan chan bool) {
 GetDevices gets all devices in the DB for a given user
 db is the database to use for connection, or nil
 */
-func GetDevices(email string, db *sqlx.DB) []Device {
+func GetDevices(email string, db *sqlx.DB) ([]Device, *DBError) {
 	if db == nil {
-		db = Connect()
+		db, err := Connect()
+		if err != nil {
+			return nil, err
+		}
 		defer db.Close()
 	}
 	devices := []Device{}
 	err := db.Select(&devices, devicesQueryStr, email)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting devices for %s\n", email)
+		return nil, &DBError{fmt.Sprintf("Error getting devices for %s\n", email),
+			err.Error()}
 	}
-	return devices
+	return devices, nil
 }
 
 /*
@@ -203,19 +228,22 @@ nickname is the nickname that Pushbullet gives
 db can be a sqlx DB connection or nil
 wg is the WaitGroup to use when this is a goroutine
 */
-func AddDevice(email string, deviceID string, nickname string, db *sqlx.DB, wg *sync.WaitGroup) {
+func AddDevice(email string, deviceID string, nickname string, db *sqlx.DB, wg *sync.WaitGroup) *DBError {
 	//wait until end of function to tell wait group that we're exiting
 	defer wg.Done()
 	if db == nil {
-		db = Connect()
+		db, err := Connect()
+		if err != nil {
+			return err
+		}
 		defer db.Close()
 	}
 	_, err := db.Exec(devicesInsStr, email, deviceID, nickname)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error inserting device %s for %s\n",
-			deviceID, email)
-		fmt.Println(err)
+		return &DBError{fmt.Sprintf("Error inserting device %s for %s\n",
+			deviceID, email), err.Error()}
 	}
+	return nil
 }
 
 /*
@@ -223,76 +251,100 @@ DeleteDevice deletes a given device from the database
 deviceID is the UUID for the device
 NOTE: we don't need the email since each device ID is unique
 */
-func DeleteDevice(deviceID string) {
-	db := Connect()
-	defer db.Close()
-	_, err := db.Exec(devicesDelStr, deviceID)
+func DeleteDevice(deviceID string) *DBError {
+	db, err := Connect()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error deleting device %s\n", deviceID)
+		return err
 	}
+	defer db.Close()
+	if _, err := db.Exec(devicesDelStr, deviceID); err != nil {
+		return &DBError{fmt.Sprintf("Error deleting device %s\n", deviceID),
+			err.Error()}
+	}
+	return nil
 }
 
-func UpdateDevice(deviceID string, active bool) {
-	db := Connect()
+/*
+UpdateDevice updates whether or not a device is active in the database
+This decides whether or not it will receive new pushes
+NOTE: we don't need the email since each device ID is unique
+*/
+func UpdateDevice(deviceID string, active bool) *DBError {
+	db, err := Connect()
+	if err != nil {
+		return err
+	}
 	defer db.Close()
 	if _, err := db.Exec(devicesUpdActive, active, deviceID); err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating device %s to %t\n", deviceID, active)
+		return &DBError{fmt.Sprintf("Error updating device %s to %t\n", deviceID, active),
+			err.Error()}
 	}
+	return nil
 }
 
 /*
 GetAllSearches gets every search from the database, used at program startup
 */
-func GetAllSearches() []Search {
-	db := Connect()
+func GetAllSearches() ([]Search, *DBError) {
+	db, err := Connect()
+	if err != nil {
+		return nil, err
+	}
 	defer db.Close()
 	searches := []Search{}
-	err := db.Select(&searches, searchQueryAllStr)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting all searches\n")
+	if err := db.Select(&searches, searchQueryAllStr); err != nil {
+		return nil, &DBError{"Error getting all searches\n", err.Error()}
 	}
-	return searches
+	return searches, nil
 }
 
 /*
 GetSearches gets all the searches in the DB for the given user
 db is the database to use for connection, or nil
 */
-func GetSearches(email string, db *sqlx.DB) []Search {
+func GetSearches(email string, db *sqlx.DB) ([]Search, *DBError) {
 	if db == nil {
-		db = Connect()
+		db, err := Connect()
+		if err != nil {
+			return nil, err
+		}
 		defer db.Close()
 	}
 	searches := []Search{}
-	err := db.Select(&searches, searchQueryStr, email)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting searches for %s\n", email)
+	if err := db.Select(&searches, searchQueryStr, email); err != nil {
+		return nil, &DBError{fmt.Sprintf("Error getting searches for %s\n", email),
+			err.Error()}
 	}
-	return searches
+	return searches, nil
 }
 
 /*
 GetLastRes gets the last search result for the given search and user
 sub is the subreddit that the search is for
 */
-func GetLastRes(email string, sub string, search string) string {
-	db := Connect()
+func GetLastRes(email string, sub string, search string) (string, *DBError) {
+	db, err := Connect()
+	if err != nil {
+		return "", err
+	}
 	defer db.Close()
 	searches := []Search{}
-	err := db.Select(&searches, searchIndQueryStr, email, sub, search)
-	if err != nil || len(searches) == 0 {
-		fmt.Fprintf(os.Stderr, fmt.Sprintf("Error getting search (%s, %s, %s)",
-			email, sub, search))
+	if err := db.Select(&searches, searchIndQueryStr, email, sub, search); err != nil || len(searches) == 0 {
+		return "", &DBError{fmt.Sprintf("Error getting search (%s, %s, %s)",
+			email, sub, search), err.Error()}
 	}
-	return searches[0].LastResult
+	return searches[0].LastResult, nil
 }
 
 /*
 DeleteMissingSearches deletes all searches in the DB not in the searches slice
 searches is a slice containing the new searches
 */
-func DeleteMissingSearches(email string, sub string, searches []string, rm RoutineManager) error {
-	db := Connect()
+func DeleteMissingSearches(email string, sub string, searches []string, rm RoutineManager) *DBError {
+	db, dbErr := Connect()
+	if dbErr != nil {
+		return dbErr
+	}
 	defer db.Close()
 	//create query to get missing searches
 	query, args, err := sqlx.In(searchQueryMissingStr, email, sub, searches)
@@ -300,7 +352,7 @@ func DeleteMissingSearches(email string, sub string, searches []string, rm Routi
 	searchStructs := []Search{}
 	err = db.Select(&searchStructs, query, args...)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error getting missing results")
+		return &DBError{"Error getting missing results", err.Error()}
 	}
 	for _, item := range searchStructs {
 		rm.RMDeleteSearch(email, item.Sub, item.Search)
@@ -310,9 +362,7 @@ func DeleteMissingSearches(email string, sub string, searches []string, rm Routi
 	query = sqlx.Rebind(sqlx.DOLLAR, query)
 	_, err = db.Exec(query, args...)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error deleting old searches for (%s, %s)\n",
-			email, sub)
-		return errors.New("Could not delete old searches")
+		return &DBError{"Could not delete old searches", err.Error()}
 	}
 	return nil
 }
@@ -320,14 +370,17 @@ func DeleteMissingSearches(email string, sub string, searches []string, rm Routi
 /*
 DeleteSub deletes all the searches in the database for a given user and subreddit
 */
-func DeleteSub(email string, sub string, rm RoutineManager) error {
-	db := Connect()
+func DeleteSub(email string, sub string, rm RoutineManager) *DBError {
+	db, dbErr := Connect()
+	if dbErr != nil {
+		return dbErr
+	}
 	defer db.Close()
 	_, err := db.Exec(searchDelSubStr, email, sub)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error deleting sub (%s, %s)\n",
 			email, sub)
-		return errors.New("Could not delete sub")
+		return &DBError{"Could not delete sub", err.Error()}
 	}
 	rm.RMDeleteSub(email, sub)
 	return nil
@@ -336,108 +389,139 @@ func DeleteSub(email string, sub string, rm RoutineManager) error {
 /*
 AddSearch adds a single search to the DB for a given user and subreddit
 */
-func AddSearch(token string, email string, sub string, search string, rm RoutineManager) {
-	db := Connect()
+func AddSearch(token string, email string, sub string, search string, rm RoutineManager) *DBError {
+	db, dbErr := Connect()
+	if dbErr != nil {
+		return dbErr
+	}
 	defer db.Close()
 	_, err := db.Exec(searchInsStr, email, sub, search, "")
 	if err != nil {
 		if err.Error() != dupSearchErr {
-			fmt.Fprintf(os.Stderr, "Error inserting search for %s\n", email)
-			fmt.Println(err)
+			return &DBError{fmt.Sprintf("Error inserting search for %s\n", email),
+				err.Error()}
 		}
 	}
 	rm.RMAddSearch(token, sub, search)
+	return nil
 }
 
 /*
 UserExists checks whether or not a user exists in the database
 */
-func UserExists(email string) bool {
-	db := Connect()
+func UserExists(email string) (bool, *DBError) {
+	db, dbErr := Connect()
+	if dbErr != nil {
+		return false, dbErr
+	}
 	defer db.Close()
 	users := []UserInfo{}
 	err := db.Select(&users, userInfoQueryStr, email)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting interval for %s\n", email)
+		return false, &DBError{fmt.Sprintf("Error getting interval for %s\n", email),
+			err.Error()}
 	}
-	return len(users) != 0
+	return len(users) != 0, nil
 }
 
 /*
 GetInterval gets the refresh interval for a given user
 */
-func GetInterval(email string) float32 {
-	db := Connect()
+func GetInterval(email string) (float32, *DBError) {
+	db, dbErr := Connect()
+	if dbErr != nil {
+		return 0, dbErr
+	}
 	defer db.Close()
 	users := []UserInfo{}
 	err := db.Select(&users, userInfoQueryStr, email)
 	if err != nil || len(users) == 0 {
-		fmt.Fprintf(os.Stderr, "Error getting interval for %s\n", email)
+		return 0, &DBError{fmt.Sprintf("Error getting interval for %s\n", email), err.Error()}
 	}
-	return users[0].Interval
+	return users[0].Interval, nil
 }
 
 /*
 UpdateInterval updates the refresh interval for a given user
 */
-func UpdateInterval(email string, interval float32) {
-	db := Connect()
+func UpdateInterval(email string, interval float32) *DBError {
+	db, err := Connect()
+	if err != nil {
+		return err
+	}
 	defer db.Close()
 	if _, err := db.Exec(userInfoUpdInt, interval, email); err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating interval for %s to %f\n", email, interval)
+		return &DBError{fmt.Sprintf("Error updating interval for %s to %f\n",
+			email, interval), err.Error()}
 	}
+	return nil
 }
 
 /*
 GetUserToken gets a user's Pushbullet access token from the database,
 mostly used for starting threads when the application reboots
 */
-func GetUserToken(email string) string {
-	db := Connect()
+func GetUserToken(email string) (string, *DBError) {
+	db, dbErr := Connect()
+	if dbErr != nil {
+		return "", dbErr
+	}
 	defer db.Close()
 	users := []UserInfo{}
 	err := db.Select(&users, userInfoQueryStr, email)
 	if err != nil || len(users) == 0 {
-		fmt.Fprintf(os.Stderr, "Error getting token for %s\n", email)
+		return "", &DBError{fmt.Sprintf("Error getting token for %s\n", email), err.Error()}
 	}
-	return users[0].Token
+	return users[0].Token, nil
 }
 
 /*
 UpdateUserToken updates a user's access token in the database
 */
-func UpdateUserToken(email string, token string) {
-	db := Connect()
+func UpdateUserToken(email string, token string) *DBError {
+	db, dbErr := Connect()
+	if dbErr != nil {
+		return dbErr
+	}
 	defer db.Close()
 	_, err := db.Exec(userInfoUpdStr, token, email)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating %s to %s\n", email, token)
+		return &DBError{fmt.Sprintf("Error updating %s to %s\n", email, token), err.Error()}
 	}
+	return nil
 }
 
 /*
 UpdateLastRes updates the last result URL for a search for a given user
 */
-func UpdateLastRes(email string, sub string, search string, url string) {
-	db := Connect()
+func UpdateLastRes(email string, sub string, search string, url string) *DBError {
+	db, dbErr := Connect()
+	if dbErr != nil {
+		return dbErr
+	}
 	defer db.Close()
 	_, err := db.Exec(searchUpdStr, url, email, sub, search)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating (%s, %s, %s) to %s\n",
-			email, sub, search, url)
+		return &DBError{fmt.Sprintf("Error updating (%s, %s, %s) to %s\n",
+			email, sub, search, url), err.Error()}
 	}
+	return nil
 }
 
 /*
 AddUser adds a user to the database given their interval and token
 */
-func AddUser(email string, token string, db *sqlx.DB) {
+func AddUser(email string, token string, db *sqlx.DB) *DBError {
 	if db == nil {
-		db = Connect()
+		db, err := Connect()
+		if err != nil {
+			return err
+		}
 		defer db.Close()
 	}
 	_, err := db.Exec(userInfoInsStr, email, token)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating user %s\n", email)
+		return &DBError{fmt.Sprintf("Error creating user %s\n", email), err.Error()}
 	}
+	return nil
 }
