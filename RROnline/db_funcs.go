@@ -157,6 +157,7 @@ func RefreshDevices(token string, db *sqlx.DB, rChan chan *DBError) {
 		db, dbErr = Connect()
 		if dbErr != nil {
 			rChan <- dbErr
+			return
 		}
 		defer db.Close()
 	}
