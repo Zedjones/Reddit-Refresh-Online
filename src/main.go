@@ -125,7 +125,7 @@ func updateInterval(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/")
 	}
 	email := RROnline.GetEmail(userToken.Value)
-	logger.Log.Printf("Updating interval for %s to %b\n", email, interval)
+	logger.Log.Printf("Updating interval for %s to %f\n", email, interval.Interval)
 	RROnline.UpdateInterval(email, interval.Interval)
 	return c.NoContent(http.StatusOK)
 }
