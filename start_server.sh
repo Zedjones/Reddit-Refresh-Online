@@ -1,5 +1,5 @@
 #!/bin/bash
 
-cd /home/zedjones/Downloads/Reddit-Refresh-Online/src/
+cd `pwd`/src
 go build 
 ./src
