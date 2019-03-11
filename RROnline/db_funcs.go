@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -56,8 +57,15 @@ err is the operation that the error occurred on
 reason is the reason this error occurred
 */
 type DBError struct {
-	err    string
-	reason string
+	Err    string
+	Reason string
+}
+
+/*
+LogDBError is a simple function to log the DBError struct
+*/
+func LogDBError(dbError *DBError) {
+	log.Printf("Error: %s, Reason: %s\n", dbError.Err, dbError.Reason)
 }
 
 const dbConfFile = "../DBSettings.json"
@@ -144,10 +152,11 @@ db is the database to use for connection, or nil
 func RefreshDevices(token string, db *sqlx.DB, rChan chan *DBError) {
 	errors := ""
 	reasons := ""
+	dbErr := new(DBError)
 	if db == nil {
-		db, err := Connect()
-		if err != nil {
-			rChan <- err
+		db, dbErr = Connect()
+		if dbErr != nil {
+			rChan <- dbErr
 		}
 		defer db.Close()
 	}
@@ -205,10 +214,11 @@ GetDevices gets all devices in the DB for a given user
 db is the database to use for connection, or nil
 */
 func GetDevices(email string, db *sqlx.DB) ([]Device, *DBError) {
+	dbErr := new(DBError)
 	if db == nil {
-		db, err := Connect()
-		if err != nil {
-			return nil, err
+		db, dbErr = Connect()
+		if dbErr != nil {
+			return nil, dbErr
 		}
 		defer db.Close()
 	}
@@ -231,10 +241,11 @@ wg is the WaitGroup to use when this is a goroutine
 func AddDevice(email string, deviceID string, nickname string, db *sqlx.DB, wg *sync.WaitGroup) *DBError {
 	//wait until end of function to tell wait group that we're exiting
 	defer wg.Done()
+	dbErr := new(DBError)
 	if db == nil {
-		db, err := Connect()
-		if err != nil {
-			return err
+		db, dbErr = Connect()
+		if dbErr != nil {
+			return dbErr
 		}
 		defer db.Close()
 	}
@@ -303,10 +314,11 @@ GetSearches gets all the searches in the DB for the given user
 db is the database to use for connection, or nil
 */
 func GetSearches(email string, db *sqlx.DB) ([]Search, *DBError) {
+	dbErr := new(DBError)
 	if db == nil {
-		db, err := Connect()
-		if err != nil {
-			return nil, err
+		db, dbErr = Connect()
+		if dbErr != nil {
+			return nil, dbErr
 		}
 		defer db.Close()
 	}
@@ -512,10 +524,11 @@ func UpdateLastRes(email string, sub string, search string, url string) *DBError
 AddUser adds a user to the database given their interval and token
 */
 func AddUser(email string, token string, db *sqlx.DB) *DBError {
+	dbErr := new(DBError)
 	if db == nil {
-		db, err := Connect()
-		if err != nil {
-			return err
+		db, dbErr = Connect()
+		if dbErr != nil {
+			return dbErr
 		}
 		defer db.Close()
 	}

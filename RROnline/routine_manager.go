@@ -2,6 +2,7 @@ package RROnline
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/zedjones/Reddit-Refresh-Go/reddit_refresh_go/reddit_refresh"
@@ -93,17 +94,20 @@ func checkResult(token string, sub string, search string, listen <-chan bool) {
 	for {
 		interval, err := GetInterval(email)
 		if err != nil {
-			//TODO: Logging
+			LogDBError(err)
+			return
 		}
 		oldResult, err := GetLastRes(email, sub, search)
 		if err != nil {
-			//TODO: Logging
+			LogDBError(err)
+			return
 		}
 		newResult := reddit_refresh.GetResult(sub, search)
 		if oldResult != newResult.Url {
 			devices, err := GetDevices(email, nil)
 			if err != nil {
-				//TODO: Logging
+				LogDBError(err)
+				return
 			}
 			for _, device := range devices {
 				if device.Active {
@@ -132,18 +136,18 @@ func checkResultTesting(token string, sub string, search string, listen <-chan b
 	email := GetEmail(token)
 	interval, err := GetInterval(email)
 	if err != nil {
-		fmt.Printf(err.err, err.reason)
+		fmt.Printf(err.Err, err.Reason)
 	}
 	for {
 		oldResult, err := GetLastRes(email, sub, search)
 		if err != nil {
-			fmt.Printf(err.err, err.reason)
+			fmt.Printf(err.Err, err.Reason)
 		}
 		newResult := reddit_refresh.GetResult(sub, search)
 		fmt.Println(oldResult, newResult)
 		select {
 		case <-listen:
-			fmt.Println("Deleting search: " + search)
+			log.Println("Deleting search: " + search)
 			return
 		case <-time.After(time.Duration(interval*60) * time.Second):
 			continue

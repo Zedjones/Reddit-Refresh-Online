@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -29,38 +30,45 @@ type userToken struct {
 	UserToken string `json:"user_token"`
 }
 
+/*
+TemplateRenderer is exported for the Echo template renderer to use
+*/
 type TemplateRenderer struct {
 	templates *template.Template
 }
 
-type Searches struct {
+type searches struct {
 	Sub      string   `json:"subreddit"`
 	Searches []string `json:"searches"`
 }
 
-type Search struct {
+type search struct {
 	Sub    string `json:"subreddit"`
 	Search string `json:"search"`
 }
 
-type Device struct {
+type device struct {
 	ID     string `json:"id"`
 	Active bool   `json:"active"`
 }
 
-type Sub struct {
+type sub struct {
 	Sub string `json:"subreddit"`
 }
 
-type Interval struct {
+type interval struct {
 	Interval float32 `json:"interval"`
 }
 
+/*
+Render is exported for the Echo template renderer to use
+*/
 func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
 func main() {
+	log.Println("Starting server")
 	RROnline.LoadDBConfig()
 	RROnline.LoadPushConfig()
 	getPushURL()
@@ -91,18 +99,25 @@ func getPushURL() {
 }
 
 func startSearches() {
+	log.Println("Starting searches")
 	routineManager = *RROnline.CreateManager()
-	searches := RROnline.GetAllSearches()
+	searches, err := RROnline.GetAllSearches()
+	if err != nil {
+		RROnline.LogDBError(err)
+	}
 	for _, item := range searches {
-		token := RROnline.GetUserToken(item.Email)
+		token, err := RROnline.GetUserToken(item.Email)
+		if err != nil {
+			RROnline.LogDBError(err)
+		}
 		routineManager.RMAddSearch(token, item.Sub, item.Search)
 	}
 }
 
 func updateInterval(c echo.Context) error {
-	interval := new(Interval)
+	interval := new(interval)
 	if err := c.Bind(interval); err != nil {
-		fmt.Fprintln(os.Stderr, "Error binding JSON body to interval.")
+		log.Println("Error binding JSON body to interval.")
 	}
 	userToken, err := c.Cookie("user_token")
 	if err != nil {
@@ -114,9 +129,9 @@ func updateInterval(c echo.Context) error {
 }
 
 func editDevice(c echo.Context) error {
-	device := new(Device)
+	device := new(device)
 	if err := c.Bind(device); err != nil {
-		fmt.Fprintln(os.Stderr, "Error binding JSON body to device.")
+		log.Println("Error binding JSON body to device.")
 	}
 	if _, err := c.Cookie("user_token"); err != nil {
 		return c.Redirect(http.StatusFound, "/")
@@ -126,9 +141,9 @@ func editDevice(c echo.Context) error {
 }
 
 func validateRoute(c echo.Context) error {
-	sub := new(Sub)
+	sub := new(sub)
 	if err := c.Bind(sub); err != nil {
-		fmt.Fprintln(os.Stderr, "Error binding JSON body to sub.")
+		log.Println("Error binding JSON body to sub.")
 	}
 	if sub.Sub == "" {
 		return c.NoContent(http.StatusBadRequest)
@@ -146,8 +161,8 @@ func handleToken(c echo.Context) error {
 	_, err := c.Cookie("user_token")
 	if err != nil {
 		if err.Error() != "http: named cookie not present" {
-			fmt.Fprintf(os.Stderr, "Error getting cookie user_token.\n")
-			fmt.Println(err)
+			RROnline.LogDBError(&RROnline.DBError{Err: "Error getting cookie user_token.\n",
+				Reason: err.Error()})
 		}
 	}
 	cookie := new(http.Cookie)
@@ -158,8 +173,15 @@ func handleToken(c echo.Context) error {
 	cookie.HttpOnly = true
 	c.SetCookie(cookie)
 	email := RROnline.GetEmail(userTok)
-	if !RROnline.UserExists(email) {
-		db := RROnline.Connect()
+	exists, dbErr := RROnline.UserExists(email)
+	if dbErr != nil {
+		RROnline.LogDBError(dbErr)
+	}
+	if !exists {
+		db, err := RROnline.Connect()
+		if err != nil {
+			RROnline.LogDBError(err)
+		}
 		RROnline.AddUser(email, userTok, db)
 		RROnline.RefreshDevices(userTok, db, nil)
 	} else {
@@ -187,13 +209,22 @@ func mainPage(c echo.Context) error {
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/")
 	}
-	refreshChan := make(chan bool)
-	db := RROnline.Connect()
+	refreshChan := make(chan *RROnline.DBError)
+	db, dbErr := RROnline.Connect()
+	if err != nil {
+		RROnline.LogDBError(dbErr)
+	}
 	go RROnline.RefreshDevices(userToken.Value, db, refreshChan)
 	name := RROnline.GetUserName(userToken.Value)
 	email := RROnline.GetEmail(userToken.Value)
-	searches := RROnline.GetSearches(email, db)
-	interval := RROnline.GetInterval(email)
+	searches, dbErr := RROnline.GetSearches(email, db)
+	if err != nil {
+		RROnline.LogDBError(dbErr)
+	}
+	interval, dbErr := RROnline.GetInterval(email)
+	if dbErr != nil {
+		RROnline.LogDBError(dbErr)
+	}
 	searchMap := make(map[string][]string)
 	for _, search := range searches {
 		if _, ok := searchMap[search.Sub]; ok {
@@ -202,8 +233,14 @@ func mainPage(c echo.Context) error {
 			searchMap[search.Sub] = []string{search.Search}
 		}
 	}
-	<-refreshChan
-	devices := RROnline.GetDevices(email, db)
+	dbErr = <-refreshChan
+	if dbErr != nil {
+		RROnline.LogDBError(dbErr)
+	}
+	devices, dbErr := RROnline.GetDevices(email, db)
+	if dbErr != nil {
+		RROnline.LogDBError(dbErr)
+	}
 	data := make(map[string]interface{})
 	data["name"] = name
 	data["searches"] = searchMap
@@ -216,7 +253,7 @@ func mainPage(c echo.Context) error {
 }
 
 func addSearch(c echo.Context) error {
-	searches := new(Searches)
+	searches := new(searches)
 	if err := c.Bind(searches); err != nil {
 		fmt.Fprintln(os.Stderr, "Error binding JSON body to searches.")
 	}
@@ -235,18 +272,18 @@ func addSearch(c echo.Context) error {
 }
 
 func deleteSub(c echo.Context) error {
-	sub := new(Sub)
+	sub := new(sub)
 	if err := c.Bind(sub); err != nil {
-		fmt.Fprintf(os.Stderr, "Error binding JSON body to search.\n")
+		log.Printf("Error binding JSON body to search.\n")
 	}
 	userToken, err := c.Cookie("user_token")
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/")
 	}
 	email := RROnline.GetEmail(userToken.Value)
-	err = RROnline.DeleteSub(email, sub.Sub, routineManager)
-	if err != nil {
-		//TODO: handle error here
+	dbErr := RROnline.DeleteSub(email, sub.Sub, routineManager)
+	if dbErr != nil {
+		RROnline.LogDBError(dbErr)
 	}
 	return nil
 }
