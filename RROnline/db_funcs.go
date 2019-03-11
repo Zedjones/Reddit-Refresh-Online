@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"sync"
 
+	"github.com/Zedjones/Reddit-Refresh-Online/logger"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
@@ -65,7 +65,7 @@ type DBError struct {
 LogDBError is a simple function to log the DBError struct
 */
 func LogDBError(dbError *DBError) {
-	log.Printf("Error: %s, Reason: %s\n", dbError.Err, dbError.Reason)
+	logger.Log.Printf("Error: %s, Reason: %s\n", dbError.Err, dbError.Reason)
 }
 
 const dbConfFile = "../DBSettings.json"

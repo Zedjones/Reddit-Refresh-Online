@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/Zedjones/Reddit-Refresh-Online/logger"
 	"github.com/zedjones/Reddit-Refresh-Go/reddit_refresh_go/reddit_refresh"
 )
 
@@ -36,6 +37,7 @@ also creating the necessary maps
 */
 func (rm RoutineManager) RMAddSub(token string, sub string, searches []string) {
 	email := GetEmail(token)
+	logger.Log.Printf("Adding searches for sub %s for %s\n", sub, email)
 	if _, ok := rm.masterMap[email]; !ok {
 		rm.masterMap[email] = make(emailSubMap)
 	}
@@ -53,6 +55,7 @@ also creating the necesssary maps
 */
 func (rm RoutineManager) RMAddSearch(token string, sub string, search string) {
 	email := GetEmail(token)
+	logger.Log.Printf("Adding search %s/%s for %s\n", sub, search, email)
 	if _, ok := rm.masterMap[email]; !ok {
 		rm.masterMap[email] = make(emailSubMap)
 	}
@@ -70,6 +73,7 @@ func (rm RoutineManager) RMAddSearch(token string, sub string, search string) {
 RMDeleteSub kills all goroutines for a given subreddit
 */
 func (rm RoutineManager) RMDeleteSub(email string, sub string) {
+	logger.Log.Printf("Deleting sub: %s for %s\n", sub, email)
 	for search := range rm.masterMap[email][sub] {
 		rm.RMDeleteSearch(email, sub, search)
 	}
@@ -80,6 +84,7 @@ RMDeleteSearch kills a search goroutine for the given user by sending a
 signal over the channel
 */
 func (rm RoutineManager) RMDeleteSearch(email string, sub string, search string) {
+	logger.Log.Printf("Deleting search: %s/%s for %s\n", sub, search, email)
 	rm.masterMap[email][sub][search] <- true
 }
 
@@ -90,6 +95,7 @@ sends a push to each of the user's active devices and updates the last
 result in the database to the new URL.
 */
 func checkResult(token string, sub string, search string, listen <-chan bool) {
+	logger.Log.Printf("Getting email for token: %s\n", token)
 	email := GetEmail(token)
 	for {
 		interval, err := GetInterval(email)
@@ -120,7 +126,7 @@ func checkResult(token string, sub string, search string, listen <-chan bool) {
 		//channel returns
 		select {
 		case <-listen:
-			fmt.Println("Deleting search: " + search)
+			logger.Log.Println("Deleting search: " + search)
 			return
 		case <-time.After(time.Duration(interval*60) * time.Second):
 			continue

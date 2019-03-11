@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"github.com/Zedjones/Reddit-Refresh-Online/RROnline"
+	"github.com/Zedjones/Reddit-Refresh-Online/logger"
 )
 
 const pushURLTemplate = "https://www.pushbullet.com/authorize?client_id=%s" +
@@ -68,7 +68,8 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 }
 
 func main() {
-	log.Println("Starting server")
+	logger.Init()
+	logger.Log.Println("Starting server")
 	RROnline.LoadDBConfig()
 	RROnline.LoadPushConfig()
 	getPushURL()
@@ -99,7 +100,7 @@ func getPushURL() {
 }
 
 func startSearches() {
-	log.Println("Starting searches")
+	logger.Log.Println("Starting searches")
 	routineManager = *RROnline.CreateManager()
 	searches, err := RROnline.GetAllSearches()
 	if err != nil {
@@ -117,13 +118,14 @@ func startSearches() {
 func updateInterval(c echo.Context) error {
 	interval := new(interval)
 	if err := c.Bind(interval); err != nil {
-		log.Println("Error binding JSON body to interval.")
+		logger.Log.Println("Error binding JSON body to interval.")
 	}
 	userToken, err := c.Cookie("user_token")
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/")
 	}
 	email := RROnline.GetEmail(userToken.Value)
+	logger.Log.Printf("Updating interval for %s to %b\n", email, interval)
 	RROnline.UpdateInterval(email, interval.Interval)
 	return c.NoContent(http.StatusOK)
 }
@@ -131,11 +133,12 @@ func updateInterval(c echo.Context) error {
 func editDevice(c echo.Context) error {
 	device := new(device)
 	if err := c.Bind(device); err != nil {
-		log.Println("Error binding JSON body to device.")
+		logger.Log.Println("Error binding JSON body to device.")
 	}
 	if _, err := c.Cookie("user_token"); err != nil {
 		return c.Redirect(http.StatusFound, "/")
 	}
+	logger.Log.Printf("Updating device %s to %t\n", device.ID, device.Active)
 	RROnline.UpdateDevice(device.ID, device.Active)
 	return c.NoContent(http.StatusOK)
 }
@@ -143,7 +146,7 @@ func editDevice(c echo.Context) error {
 func validateRoute(c echo.Context) error {
 	sub := new(sub)
 	if err := c.Bind(sub); err != nil {
-		log.Println("Error binding JSON body to sub.")
+		logger.Log.Println("Error binding JSON body to sub.")
 	}
 	if sub.Sub == "" {
 		return c.NoContent(http.StatusBadRequest)
@@ -274,7 +277,7 @@ func addSearch(c echo.Context) error {
 func deleteSub(c echo.Context) error {
 	sub := new(sub)
 	if err := c.Bind(sub); err != nil {
-		log.Printf("Error binding JSON body to search.\n")
+		logger.Log.Printf("Error binding JSON body to search.\n")
 	}
 	userToken, err := c.Cookie("user_token")
 	if err != nil {
