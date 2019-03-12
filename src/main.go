@@ -117,6 +117,8 @@ func startSearches() {
 
 func updateInterval(c echo.Context) error {
 	interval := new(interval)
+	// TODO: Failure to bind should result in returning 5xx code. I believe this is only called via AJAX
+	// so loading new page is probably not necessary.
 	if err := c.Bind(interval); err != nil {
 		logger.Log.Println("Error binding JSON body to interval.")
 	}
@@ -132,6 +134,7 @@ func updateInterval(c echo.Context) error {
 
 func editDevice(c echo.Context) error {
 	device := new(device)
+	// TODO: Failure to bind should result in returning 5xx code or loading a special page stating the error
 	if err := c.Bind(device); err != nil {
 		logger.Log.Println("Error binding JSON body to device.")
 	}
@@ -145,6 +148,8 @@ func editDevice(c echo.Context) error {
 
 func validateRoute(c echo.Context) error {
 	sub := new(sub)
+	// TODO: Failure to bind should result in returning 5xx code, probably don't need special page as this is called
+	// only through AJAX call. Maybe return different JSON and can display through JS message to user?
 	if err := c.Bind(sub); err != nil {
 		logger.Log.Println("Error binding JSON body to sub.")
 	}
@@ -182,6 +187,9 @@ func handleToken(c echo.Context) error {
 	}
 	if !exists {
 		db, err := RROnline.Connect()
+		// TODO: Failure to connect to the DB should result in 5xx code, probably 500 and should return out of
+		// this function. Otherwise, there will be a chain of errors as connect, probably,
+		// fails in the following two functions. It could also render a special page 
 		if err != nil {
 			RROnline.LogDBError(err)
 		}
@@ -214,6 +222,7 @@ func mainPage(c echo.Context) error {
 	}
 	refreshChan := make(chan *RROnline.DBError)
 	db, dbErr := RROnline.Connect()
+	// TODO: Same deal as two functions up, should return a 5XX status code or render a special page
 	if err != nil {
 		RROnline.LogDBError(dbErr)
 	}
@@ -221,9 +230,12 @@ func mainPage(c echo.Context) error {
 	name := RROnline.GetUserName(userToken.Value)
 	email := RROnline.GetEmail(userToken.Value)
 	searches, dbErr := RROnline.GetSearches(email, db)
+	// TODO: Not sure what dbErr is, I think it changes? Either way if it being present undermines the following
+	// functions, it should probably return some sort of status code or result in a page render
 	if err != nil {
 		RROnline.LogDBError(dbErr)
 	}
+	// TODO: Same as above
 	interval, dbErr := RROnline.GetInterval(email)
 	if dbErr != nil {
 		RROnline.LogDBError(dbErr)
@@ -237,10 +249,12 @@ func mainPage(c echo.Context) error {
 		}
 	}
 	dbErr = <-refreshChan
+	// TODO: Same as above
 	if dbErr != nil {
 		RROnline.LogDBError(dbErr)
 	}
 	devices, dbErr := RROnline.GetDevices(email, db)
+	// TODO: Same as above
 	if dbErr != nil {
 		RROnline.LogDBError(dbErr)
 	}
@@ -257,6 +271,8 @@ func mainPage(c echo.Context) error {
 
 func addSearch(c echo.Context) error {
 	searches := new(searches)
+	// TODO: Same as previous bind issue. If this fails, should probably return a 5XX status code or
+	// render an error page
 	if err := c.Bind(searches); err != nil {
 		fmt.Fprintln(os.Stderr, "Error binding JSON body to searches.")
 	}
@@ -276,6 +292,7 @@ func addSearch(c echo.Context) error {
 
 func deleteSub(c echo.Context) error {
 	sub := new(sub)
+	// TODO: See addSearch function
 	if err := c.Bind(sub); err != nil {
 		logger.Log.Printf("Error binding JSON body to search.\n")
 	}
@@ -285,6 +302,7 @@ func deleteSub(c echo.Context) error {
 	}
 	email := RROnline.GetEmail(userToken.Value)
 	dbErr := RROnline.DeleteSub(email, sub.Sub, routineManager)
+	// TODO: see mainPage function above
 	if dbErr != nil {
 		RROnline.LogDBError(dbErr)
 	}
