@@ -176,10 +176,14 @@ func handleToken(c echo.Context) error {
 	cookie := new(http.Cookie)
 	cookie.Name = "user_token"
 	cookie.Value = userTok
-	//cookie.Secure = true
+	for _, envVar := range os.Environ() {
+		pair := strings.Split(envVar, "=")
+		if pair[0] == "SECURE_COOKIES" && pair[1] == "True" {
+			cookie.Secure = true
+		}
+	}
 	cookie.Expires = time.Now().Add(24 * time.Hour)
 	cookie.HttpOnly = true
-	c.SetCookie(cookie)
 	email := RROnline.GetEmail(userTok)
 	exists, dbErr := RROnline.UserExists(email)
 	if dbErr != nil {
@@ -189,7 +193,7 @@ func handleToken(c echo.Context) error {
 		db, err := RROnline.Connect()
 		// TODO: Failure to connect to the DB should result in 5xx code, probably 500 and should return out of
 		// this function. Otherwise, there will be a chain of errors as connect, probably,
-		// fails in the following two functions. It could also render a special page 
+		// fails in the following two functions. It could also render a special page
 		if err != nil {
 			RROnline.LogDBError(err)
 		}
@@ -198,6 +202,7 @@ func handleToken(c echo.Context) error {
 	} else {
 		RROnline.UpdateUserToken(email, userTok)
 	}
+	c.SetCookie(cookie)
 	return c.Redirect(http.StatusFound, "/searchPage")
 }
 
@@ -207,11 +212,13 @@ func index(c echo.Context) error {
 	if err != nil {
 		data["login"] = "Login"
 		data["url"] = pushURL
+		data["error"] = "testing"
 		return c.Render(http.StatusOK, "index.html", data)
 	}
 	name := RROnline.GetUserName(userToken.Value)
 	data["login"] = name
 	data["url"] = "/searchPage"
+	data["error"] = "testing"
 	return c.Render(http.StatusOK, "index.html", data)
 }
 

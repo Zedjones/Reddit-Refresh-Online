@@ -42,5 +42,11 @@
     </div>
 
     <script src="assets/js/main.js"></script>
+
+    <script> 
+        {{if index . "error"}}
+            M.toast({html: {{index . "error"}} })
+        {{end}}
+    </script>
 </body>
 </html>
