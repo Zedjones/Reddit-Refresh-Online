@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
 	"html/template"
 	"io"
@@ -9,7 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/sessions"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/middleware"
 
 	"github.com/Zedjones/Reddit-Refresh-Online/RROnline"
@@ -77,6 +80,9 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.CSRF())
 	e.Use(middleware.Logger())
+	sessionStr := make([]byte, 32)
+	rand.Read(sessionStr)
+	e.Use(session.Middleware(sessions.NewCookieStore([]byte(sessionStr))))
 	renderer := &TemplateRenderer{
 		templates: template.Must(template.ParseGlob("../templates/*.html")),
 	}
@@ -117,10 +123,9 @@ func startSearches() {
 
 func updateInterval(c echo.Context) error {
 	interval := new(interval)
-	// TODO: Failure to bind should result in returning 5xx code. I believe this is only called via AJAX
-	// so loading new page is probably not necessary.
 	if err := c.Bind(interval); err != nil {
 		logger.Log.Println("Error binding JSON body to interval.")
+		return c.NoContent(http.StatusBadRequest)
 	}
 	userToken, err := c.Cookie("user_token")
 	if err != nil {
@@ -134,9 +139,9 @@ func updateInterval(c echo.Context) error {
 
 func editDevice(c echo.Context) error {
 	device := new(device)
-	// TODO: Failure to bind should result in returning 5xx code or loading a special page stating the error
 	if err := c.Bind(device); err != nil {
 		logger.Log.Println("Error binding JSON body to device.")
+		return c.NoContent(http.StatusBadRequest)
 	}
 	if _, err := c.Cookie("user_token"); err != nil {
 		return c.Redirect(http.StatusFound, "/")
@@ -148,10 +153,9 @@ func editDevice(c echo.Context) error {
 
 func validateRoute(c echo.Context) error {
 	sub := new(sub)
-	// TODO: Failure to bind should result in returning 5xx code, probably don't need special page as this is called
-	// only through AJAX call. Maybe return different JSON and can display through JS message to user?
 	if err := c.Bind(sub); err != nil {
 		logger.Log.Println("Error binding JSON body to sub.")
+		return c.NoContent(http.StatusBadRequest)
 	}
 	if sub.Sub == "" {
 		return c.NoContent(http.StatusBadRequest)
@@ -162,8 +166,11 @@ func validateRoute(c echo.Context) error {
 
 func handleToken(c echo.Context) error {
 	code := c.QueryParam("code")
+	sess, _ := session.Get("session", c)
 	if code == "" {
-		return c.NoContent(http.StatusNotFound)
+		sess.Values["error"] = "Error handling token or 'Deny' was selected"
+		sess.Save(c.Request(), c.Response())
+		return c.Redirect(http.StatusFound, "/")
 	}
 	userTok := RROnline.GetToken(code)
 	_, err := c.Cookie("user_token")
@@ -171,6 +178,9 @@ func handleToken(c echo.Context) error {
 		if err.Error() != "http: named cookie not present" {
 			RROnline.LogDBError(&RROnline.DBError{Err: "Error getting cookie user_token.\n",
 				Reason: err.Error()})
+			sess.Values["error"] = "Server error occurred, please try again."
+			sess.Save(c.Request(), c.Response())
+			return c.Redirect(http.StatusFound, "/")
 		}
 	}
 	cookie := new(http.Cookie)
@@ -188,14 +198,17 @@ func handleToken(c echo.Context) error {
 	exists, dbErr := RROnline.UserExists(email)
 	if dbErr != nil {
 		RROnline.LogDBError(dbErr)
+		sess.Values["error"] = "Server error occurred, please try again."
+		sess.Save(c.Request(), c.Response())
+		return c.Redirect(http.StatusFound, "/")
 	}
 	if !exists {
 		db, err := RROnline.Connect()
-		// TODO: Failure to connect to the DB should result in 5xx code, probably 500 and should return out of
-		// this function. Otherwise, there will be a chain of errors as connect, probably,
-		// fails in the following two functions. It could also render a special page
 		if err != nil {
 			RROnline.LogDBError(err)
+			sess.Values["error"] = "Server error occurred, please try again."
+			sess.Save(c.Request(), c.Response())
+			return c.Redirect(http.StatusFound, "/")
 		}
 		RROnline.AddUser(email, userTok, db)
 		RROnline.RefreshDevices(userTok, db, nil)
@@ -207,18 +220,25 @@ func handleToken(c echo.Context) error {
 }
 
 func index(c echo.Context) error {
-	userToken, err := c.Cookie("user_token")
 	data := make(map[string]interface{})
+	sess, _ := session.Get("session", c)
+	if err, exists := sess.Values["error"]; exists {
+		data["login"] = "Login"
+		data["url"] = pushURL
+		data["error"] = err.(string)
+		delete(sess.Values, "error")
+		sess.Save(c.Request(), c.Response())
+		return c.Render(http.StatusOK, "index.html", data)
+	}
+	userToken, err := c.Cookie("user_token")
 	if err != nil {
 		data["login"] = "Login"
 		data["url"] = pushURL
-		data["error"] = "testing"
 		return c.Render(http.StatusOK, "index.html", data)
 	}
 	name := RROnline.GetUserName(userToken.Value)
 	data["login"] = name
 	data["url"] = "/searchPage"
-	data["error"] = "testing"
 	return c.Render(http.StatusOK, "index.html", data)
 }
 
@@ -278,10 +298,9 @@ func mainPage(c echo.Context) error {
 
 func addSearch(c echo.Context) error {
 	searches := new(searches)
-	// TODO: Same as previous bind issue. If this fails, should probably return a 5XX status code or
-	// render an error page
 	if err := c.Bind(searches); err != nil {
-		fmt.Fprintln(os.Stderr, "Error binding JSON body to searches.")
+		logger.Log.Println("Error binding JSON body to searches.")
+		return c.NoContent(http.StatusBadRequest)
 	}
 	userToken, err := c.Cookie("user_token")
 	if err != nil {
@@ -299,9 +318,9 @@ func addSearch(c echo.Context) error {
 
 func deleteSub(c echo.Context) error {
 	sub := new(sub)
-	// TODO: See addSearch function
 	if err := c.Bind(sub); err != nil {
-		logger.Log.Printf("Error binding JSON body to search.\n")
+		logger.Log.Println("Error binding JSON body to search.")
+		return c.NoContent(http.StatusBadRequest)
 	}
 	userToken, err := c.Cookie("user_token")
 	if err != nil {
@@ -309,9 +328,9 @@ func deleteSub(c echo.Context) error {
 	}
 	email := RROnline.GetEmail(userToken.Value)
 	dbErr := RROnline.DeleteSub(email, sub.Sub, routineManager)
-	// TODO: see mainPage function above
 	if dbErr != nil {
 		RROnline.LogDBError(dbErr)
+		return c.NoContent(http.StatusBadRequest)
 	}
 	return nil
 }
